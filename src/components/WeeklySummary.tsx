@@ -174,21 +174,23 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-gray-500`}>
-              Collecte
-            </span>
-            <div className="flex-1">
-              <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${collectePercent}%`, backgroundColor: progressColor(collectePercent, true) }}
-                />
+          <div className="-mx-1.5 rounded-md border border-[#9fb6a8]/70 bg-[#edf1ef] px-1.5 py-1">
+            <div className="flex items-center gap-2">
+              <span className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-[#395647]`}>
+                Collecte
+              </span>
+              <div className="flex-1">
+                <div className="h-1.5 rounded-full overflow-hidden bg-[#dce5e0]">
+                  <div
+                    className="h-full rounded-full transition-all duration-300"
+                    style={{ width: `${collectePercent}%`, backgroundColor: progressColor(collectePercent, true) }}
+                  />
+                </div>
               </div>
+              <span className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-[#2c4338]`}>
+                {formatK(totalCollecte)} / {formatKEuros(WEEKLY_COLLECTE_TARGET)}
+              </span>
             </div>
-            <span className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}>
-              {formatK(totalCollecte)} / {formatKEuros(WEEKLY_COLLECTE_TARGET)}
-            </span>
           </div>
         </div>
       </div>
