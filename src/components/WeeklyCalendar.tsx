@@ -11,12 +11,13 @@ import {
   EVENT_FILTERS,
   resolveAppointmentCategory,
 } from '../constants/calendarEventStyles'
+import { getParisToday } from '../utils/calendarMetrics'
 
 export function WeeklyCalendar() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [activeFilters, setActiveFilters] = useState<AppointmentCategory[]>(EVENT_FILTERS)
   const [expanded, setExpanded] = useState(true)
-  const today = new Date(2026, 4, 7)
+  const today = getParisToday()
 
   const currentWeekStart = addWeeks(new Date(2026, 4, 4), weekOffset)
   const currentWeekEnd = addWeeks(new Date(2026, 4, 10), weekOffset)

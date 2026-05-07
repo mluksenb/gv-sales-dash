@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Appointment, DaySchedule } from '../types'
@@ -17,6 +18,7 @@ import {
   getSimulatedCallCompletionRatio,
   getSimulatedTasks,
   getSimulatedCollecte,
+  getActiveAppointmentIndex,
 } from '../utils/calendarMetrics'
 
 interface DayColumnProps {
@@ -26,7 +28,7 @@ interface DayColumnProps {
   collapsed?: boolean
 }
 
-const METRIC_LABEL_WIDTH_CLASS = 'w-[72px]'
+const METRIC_LABEL_WIDTH_CLASS = 'w-[96px]'
 const METRIC_VALUE_WIDTH_CLASS = 'w-[74px]'
 
 export function DayColumn({
@@ -57,8 +59,18 @@ export function DayColumn({
   const callsProgressPercent = expectedCalls > 0 ? (simulatedCalls / expectedCalls) * 100 : 0
   const tasks = getSimulatedTasks(day.date)
   const tasksProgressPercent = tasks.total > 0 ? Math.min((tasks.done / tasks.total) * 100, 100) : 0
+  const tasksUnderSlaPercent = tasks.done > 0 ? Math.min((tasks.doneUnderSla / tasks.done) * 100, 100) : 0
   const collecteAmount = getSimulatedCollecte(day.date)
   const collecteProgressPercent = Math.min((collecteAmount / DAILY_COLLECTE_TARGET) * 100, 100)
+
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!isToday) return
+    const id = setInterval(() => setTick((t) => t + 1), 30_000)
+    return () => clearInterval(id)
+  }, [isToday])
+
+  const activeAppointmentIndex = isToday ? getActiveAppointmentIndex(day.appointments) : -1
 
   return (
     <div
@@ -157,6 +169,29 @@ export function DayColumn({
             <span
               className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-gray-500`}
             >
+              SLA Tâches
+            </span>
+            <div className="flex-1">
+              <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${tasksUnderSlaPercent}%`,
+                    backgroundColor: progressColor(tasksUnderSlaPercent, true),
+                  }}
+                />
+              </div>
+            </div>
+            <span
+              className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}
+            >
+              {Math.round(tasksUnderSlaPercent)}%
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-1.5">
+            <span
+              className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-gray-500`}
+            >
               Collecte
             </span>
             <div className="flex-1">
@@ -180,15 +215,25 @@ export function DayColumn({
         <>
           <div className={`mx-2 border-t ${isToday ? 'border-[#1a3a3a]/20' : 'border-gray-200'}`} />
           <div className="flex-1 p-2 space-y-1.5">
-            {day.appointments.map((apt) => (
+            {day.appointments.map((apt, index) => (
               <div
                 key={apt.id}
-                className={
+                className={`relative ${
                   isToday
                     ? ''
                     : 'opacity-45 hover:opacity-100 transition-opacity duration-200'
-                }
+                }`}
               >
+                {index === activeAppointmentIndex && (
+                  <div
+                    className="absolute -left-[5px] top-1/2 -translate-y-1/2 z-10"
+                    style={{ filter: 'drop-shadow(0 1px 2px rgba(239, 68, 68, 0.3))' }}
+                  >
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
+                      <path d="M0 0L8 7L0 14V0Z" fill="#ef4444" />
+                    </svg>
+                  </div>
+                )}
                 <AppointmentCard appointment={apt} />
               </div>
             ))}

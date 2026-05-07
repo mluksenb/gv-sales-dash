@@ -25,13 +25,16 @@ export function getSimulatedCallCompletionRatio(date: Date): number {
   return 0.35 + getPseudoRandomFromDate(date) * 0.55
 }
 
-export function getSimulatedTasks(date: Date): { done: number; total: number } {
+export function getSimulatedTasks(date: Date): { done: number; total: number; doneUnderSla: number } {
   const r1 = getPseudoRandomFromDate(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 100))
   const total = DAILY_TASK_RANGE[0] + Math.round(r1 * (DAILY_TASK_RANGE[1] - DAILY_TASK_RANGE[0]))
   const r2 = getPseudoRandomFromDate(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 200))
   const completionRatio = date.getDay() === FULL_COMPLETION_WEEKDAY ? 1 : 0.3 + r2 * 0.6
   const done = Math.round(total * completionRatio)
-  return { done, total }
+  const r3 = getPseudoRandomFromDate(new Date(date.getFullYear(), date.getMonth(), date.getDate() + 250))
+  const underSlaRatio = done === 0 ? 0 : date.getDay() === FULL_COMPLETION_WEEKDAY ? 1 : 0.4 + r3 * 0.55
+  const doneUnderSla = Math.min(done, Math.round(done * underSlaRatio))
+  return { done, total, doneUnderSla }
 }
 
 export function getSimulatedCollecte(date: Date): number {
@@ -100,6 +103,58 @@ export function formatKEuros(amount: number): string {
 
 export function filterByCategory(appointments: Appointment[], category: string): Appointment[] {
   return appointments.filter((a) => getAppointmentCategory(a) === category)
+}
+
+export function getParisTimeMinutes(): number {
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Paris',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now)
+  const hour = Number(parts.find((p) => p.type === 'hour')!.value)
+  const minute = Number(parts.find((p) => p.type === 'minute')!.value)
+  return hour * 60 + minute
+}
+
+export function getParisToday(): Date {
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now)
+  const year = Number(parts.find((p) => p.type === 'year')!.value)
+  const month = Number(parts.find((p) => p.type === 'month')!.value) - 1
+  const day = Number(parts.find((p) => p.type === 'day')!.value)
+  return new Date(year, month, day)
+}
+
+export function getActiveAppointmentIndex(appointments: Appointment[]): number {
+  if (appointments.length === 0) return -1
+
+  const currentMinutes = getParisTimeMinutes()
+
+  const [firstH, firstM] = appointments[0].time.split(':').map(Number)
+  if (currentMinutes < firstH * 60 + firstM) return -1
+
+  const lastApt = appointments[appointments.length - 1]
+  const [lastH, lastM] = lastApt.time.split(':').map(Number)
+  if (currentMinutes >= lastH * 60 + lastM + parseDurationMinutes(lastApt.timeHint)) return -1
+
+  let activeIndex = 0
+  for (let i = 0; i < appointments.length; i++) {
+    const [h, m] = appointments[i].time.split(':').map(Number)
+    if (currentMinutes >= h * 60 + m) {
+      activeIndex = i
+    } else {
+      break
+    }
+  }
+
+  return activeIndex
 }
 
 export { CLIENT_MEETING_CATEGORY, LEAD_FOLLOW_UP_CATEGORY }

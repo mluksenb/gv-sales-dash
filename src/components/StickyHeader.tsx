@@ -6,7 +6,7 @@ import {
   CLIENT_MEETING_CATEGORY,
   resolveAppointmentCategory,
 } from '../constants/calendarEventStyles'
-import { parseDurationMinutes } from '../utils/calendarMetrics'
+import { parseDurationMinutes, getParisTimeMinutes, getParisToday } from '../utils/calendarMetrics'
 import type { Appointment, AppointmentCategory } from '../types'
 
 const INDICATOR_STYLES: Record<
@@ -62,8 +62,6 @@ const INDICATOR_STYLES: Record<
   },
 }
 
-const TODAY = new Date(2026, 4, 7)
-
 type EventState =
   | { kind: 'in_progress'; appointment: Appointment; remainingMin: number }
   | { kind: 'upcoming'; appointment: Appointment; startsInMin: number }
@@ -80,11 +78,11 @@ function formatMinutesLabel(totalMinutes: number): string {
 }
 
 function getEventState(): EventState {
-  const todaySchedule = weekSchedule.find((day) => isSameDay(day.date, TODAY))
+  const parisToday = getParisToday()
+  const todaySchedule = weekSchedule.find((day) => isSameDay(day.date, parisToday))
   if (!todaySchedule) return null
 
-  const now = new Date()
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const currentMinutes = getParisTimeMinutes()
   let inProgressState: EventState = null
 
   for (const apt of todaySchedule.appointments) {
