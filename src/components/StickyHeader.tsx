@@ -127,7 +127,7 @@ export function StickyHeader() {
 
   return (
     <div className="sticky top-0 z-50 bg-[#faf8f5]/80 backdrop-blur-xl">
-      <div className="flex items-center justify-between px-6 py-3">
+      <div className="mx-auto flex w-full max-w-[88rem] items-center justify-between px-6 py-3">
         {/* Page title */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center">
