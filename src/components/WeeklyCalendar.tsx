@@ -15,7 +15,7 @@ import {
 export function WeeklyCalendar() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [activeFilters, setActiveFilters] = useState<AppointmentCategory[]>(EVENT_FILTERS)
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
   const today = new Date(2026, 4, 7)
 
   const currentWeekStart = addWeeks(new Date(2026, 4, 4), weekOffset)
