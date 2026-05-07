@@ -86,7 +86,7 @@ export function TasksTable() {
   }, [])
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
       <div className="px-6 py-4 flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
           <ClipboardList size={16} className="text-gray-600" />
@@ -205,25 +205,28 @@ export function TasksTable() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div>
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-[65px] z-20">
             <tr className="bg-gray-900 text-white">
-              <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
                 Échéance
               </th>
-              <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
                 Prospect
               </th>
+              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap">
+                Téléphone
+              </th>
               {showTypeColumn && (
-                <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+                <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
                   Type
                 </th>
               )}
-              <th className="pl-1 pr-1 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+              <th className="bg-gray-900 pl-1 pr-1 py-2.5 text-left text-[11px] font-semibold tracking-wide">
                 Projet
               </th>
-              <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide w-[100px]">
+              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide w-[100px]">
               </th>
             </tr>
           </thead>

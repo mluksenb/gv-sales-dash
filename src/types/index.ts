@@ -36,6 +36,7 @@ export interface Task {
   tier: TierLevel
   prospectType: ProspectType
   prospectName: string
+  prospectPhone: string
   projectName: string
   projectType: ProjectType
   projectAmount: number

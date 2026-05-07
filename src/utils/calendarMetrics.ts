@@ -7,9 +7,11 @@ import {
 
 export const DAILY_MEETING_LIMIT_MINUTES = 4 * 60
 export const WEEKLY_MEETING_LIMIT_MINUTES = DAILY_MEETING_LIMIT_MINUTES * 5
+export const DAILY_APPOINTMENT_TARGET = 6
+export const WEEKLY_APPOINTMENT_TARGET = DAILY_APPOINTMENT_TARGET * 5
 export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30
 export const NO_SHOW_DURATION_MINUTES = 10
-export const EXPECTED_CALLS_PER_HOUR = 10
+export const EXPECTED_CALLS_PER_HOUR = 20
 export const DAILY_TASK_RANGE: [number, number] = [4, 12]
 export const DAILY_COLLECTE_TARGET = 15_000
 export const WEEKLY_COLLECTE_TARGET = DAILY_COLLECTE_TARGET * 5
@@ -91,6 +93,17 @@ export function progressColor(percent: number, invert: boolean): string {
   const g = Math.round(stops[i][1] + (stops[i + 1][1] - stops[i][1]) * f)
   const b = Math.round(stops[i][2] + (stops[i + 1][2] - stops[i][2]) * f)
   return `rgb(${r}, ${g}, ${b})`
+}
+
+export function appointmentProgressPercent(count: number, target: number = DAILY_APPOINTMENT_TARGET): number {
+  if (target <= 0) return 0
+  return Math.min((count / target) * 100, 100)
+}
+
+export function appointmentProgressColor(count: number): string {
+  if (count <= 3) return 'rgb(234, 67, 53)'
+  if (count <= 5) return 'rgb(251, 188, 4)'
+  return 'rgb(52, 168, 55)'
 }
 
 export function formatMeetingMinutes(totalMinutes: number): string {

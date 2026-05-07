@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale'
 import type { Appointment, DaySchedule } from '../types'
 import { AppointmentCard } from './AppointmentCard'
 import {
-  DAILY_MEETING_LIMIT_MINUTES,
+  DAILY_APPOINTMENT_TARGET,
   DAILY_COLLECTE_TARGET,
   EXPECTED_CALLS_PER_HOUR,
   CLIENT_MEETING_CATEGORY,
@@ -14,6 +14,8 @@ import {
   formatMeetingMinutes,
   formatK,
   formatKEuros,
+  appointmentProgressPercent,
+  appointmentProgressColor,
   progressColor,
   getSimulatedCallCompletionRatio,
   getSimulatedTasks,
@@ -42,16 +44,13 @@ export function DayColumn({
   const month = format(day.date, 'MMM', { locale: fr }).replace('.', '')
   const clientMeetingAppointments = filterByCategory(allAppointments, CLIENT_MEETING_CATEGORY)
   const leadFollowUpAppointments = filterByCategory(allAppointments, LEAD_FOLLOW_UP_CATEGORY)
-  const meetingMinutes = clientMeetingAppointments.reduce(
-    (total, appointment) => total + getEffectiveDurationMinutes(appointment),
-    0,
-  )
   const leadFollowUpMinutes = leadFollowUpAppointments.reduce(
     (total, appointment) => total + getEffectiveDurationMinutes(appointment),
     0,
   )
-  const meetingProgressPercent = Math.min((meetingMinutes / DAILY_MEETING_LIMIT_MINUTES) * 100, 100)
-  const meetingSummary = `${clientMeetingAppointments.length} • ${formatMeetingMinutes(meetingMinutes)}`
+  const meetingCount = clientMeetingAppointments.length
+  const meetingProgressPercent = appointmentProgressPercent(meetingCount)
+  const meetingSummary = `${meetingCount} / ${DAILY_APPOINTMENT_TARGET}`
   const leadFollowUpSummary = formatMeetingMinutes(leadFollowUpMinutes)
   const expectedCalls = Math.round((leadFollowUpMinutes / 60) * EXPECTED_CALLS_PER_HOUR)
   const simulatedCallCompletionRatio = getSimulatedCallCompletionRatio(day.date)
@@ -75,10 +74,10 @@ export function DayColumn({
   return (
     <div
       className={`flex flex-col rounded-xl min-w-0 flex-1 ${
-        isToday ? 'border-2 border-[#1a3a3a] bg-[#1a3a3a]/[0.03] shadow-sm' : ''
+        isToday ? 'overflow-clip bg-[#1a3a3a]/[0.03] shadow-sm' : ''
       }`}
     >
-      <div className={collapsed ? 'rounded-xl' : 'rounded-t-xl'}>
+      <div className={`sticky top-[65px] z-20 rounded-t-xl ${isToday ? 'bg-[#f8f9f8] border-2 border-b-0 border-[#1a3a3a]' : 'bg-white'}`}>
         <div className="text-center py-3">
           <div className={`text-[11px] font-semibold tracking-wide ${isToday ? 'text-[#1a3a3a]' : 'text-gray-400'}`}>
             {dayName}
@@ -88,7 +87,9 @@ export function DayColumn({
           </div>
           <div className={`text-xs ${isToday ? 'text-[#1a3a3a]/60' : 'text-gray-400'}`}>{month}</div>
         </div>
+      </div>
 
+      <div className={`flex flex-col flex-1 ${isToday ? 'border-2 border-t-0 border-[#1a3a3a] rounded-b-xl' : ''}`}>
         <div className={`mx-2 border-t ${isToday ? 'border-[#1a3a3a]/20' : 'border-gray-200'}`} />
 
         <div className="px-2 py-2">
@@ -102,7 +103,10 @@ export function DayColumn({
               <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
                 <div
                   className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${meetingProgressPercent}%`, backgroundColor: progressColor(meetingProgressPercent, false) }}
+                  style={{
+                    width: `${meetingProgressPercent}%`,
+                    backgroundColor: appointmentProgressColor(meetingCount),
+                  }}
                 />
               </div>
             </div>
@@ -193,7 +197,7 @@ export function DayColumn({
               <span
                 className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-[#395647]`}
               >
-                Collecte
+                Signé
               </span>
               <div className="flex-1">
                 <div className="h-1.5 rounded-full overflow-hidden bg-[#dce5e0]">
@@ -214,10 +218,8 @@ export function DayColumn({
             </div>
           </div>
         </div>
-      </div>
 
-      {!collapsed && (
-        <>
+        {!collapsed && (
           <div className="flex-1 px-2 pb-2 pt-3 space-y-1.5">
             {day.appointments.map((apt, index) => (
               <div
@@ -242,8 +244,8 @@ export function DayColumn({
               </div>
             ))}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   )
 }

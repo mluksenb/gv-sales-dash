@@ -2,7 +2,7 @@ import { BarChart3 } from 'lucide-react'
 import type { DaySchedule } from '../types'
 import { EVENT_FILTERS, resolveAppointmentCategory } from '../constants/calendarEventStyles'
 import {
-  WEEKLY_MEETING_LIMIT_MINUTES,
+  WEEKLY_APPOINTMENT_TARGET,
   WEEKLY_COLLECTE_TARGET,
   EXPECTED_CALLS_PER_HOUR,
   CLIENT_MEETING_CATEGORY,
@@ -12,6 +12,8 @@ import {
   formatMeetingMinutes,
   formatK,
   formatKEuros,
+  appointmentProgressPercent,
+  appointmentProgressColor,
   progressColor,
   getSimulatedCallCompletionRatio,
   getSimulatedTasks,
@@ -30,7 +32,6 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
   const categoryMinutes = new Map(EVENT_FILTERS.map((category) => [category, 0]))
   let totalMeetingCount = 0
   let totalNoShowCount = 0
-  let totalMeetingMinutes = 0
   let totalLeadMinutes = 0
   let totalCallsDone = 0
   let totalCallsExpected = 0
@@ -51,7 +52,6 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
 
     totalMeetingCount += clientMeetings.length
     totalNoShowCount += clientMeetings.filter((a) => a.noShow).length
-    totalMeetingMinutes += clientMeetings.reduce((sum, a) => sum + getEffectiveDurationMinutes(a), 0)
 
     const leadMinutes = leadFollowUps.reduce((sum, a) => sum + getEffectiveDurationMinutes(a), 0)
     totalLeadMinutes += leadMinutes
@@ -69,7 +69,8 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
     totalCollecte += getSimulatedCollecte(day.date)
   }
 
-  const meetingPercent = Math.min((totalMeetingMinutes / WEEKLY_MEETING_LIMIT_MINUTES) * 100, 100)
+  const meetingPercent = appointmentProgressPercent(totalMeetingCount, WEEKLY_APPOINTMENT_TARGET)
+  const averageDailyMeetingCount = totalMeetingCount / 5
   const noShowPercent = totalMeetingCount > 0 ? Math.round((totalNoShowCount / totalMeetingCount) * 100) : 0
   const callsPercent = totalCallsExpected > 0 ? Math.min((totalCallsDone / totalCallsExpected) * 100, 100) : 0
   const tasksPercent = totalTasksTotal > 0 ? Math.min((totalTasksDone / totalTasksTotal) * 100, 100) : 0
@@ -115,12 +116,15 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
               <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
                 <div
                   className="h-full rounded-full transition-all duration-300"
-                  style={{ width: `${meetingPercent}%`, backgroundColor: progressColor(meetingPercent, false) }}
+                  style={{
+                    width: `${meetingPercent}%`,
+                    backgroundColor: appointmentProgressColor(averageDailyMeetingCount),
+                  }}
                 />
               </div>
             </div>
             <span className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}>
-              {totalMeetingCount}
+              {totalMeetingCount} / {WEEKLY_APPOINTMENT_TARGET}
             </span>
           </div>
 
@@ -197,7 +201,7 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
           <div className="-mx-1.5 rounded-md border border-[#9fb6a8]/70 bg-[#edf1ef] px-1.5 py-1">
             <div className="flex items-center gap-2">
               <span className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-[#395647]`}>
-                Collecte
+                Signé
               </span>
               <div className="flex-1">
                 <div className="h-1.5 rounded-full overflow-hidden bg-[#dce5e0]">

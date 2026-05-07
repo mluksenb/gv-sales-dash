@@ -40,7 +40,7 @@ export function WeeklyCalendar() {
   return (
     <div className="space-y-4">
     <WeeklySummary weekSchedule={weekSchedule} />
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
       <div className="px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">

@@ -1,4 +1,4 @@
-import { CheckCircle2, Eye, X } from 'lucide-react'
+import { Check, PenLine, X } from 'lucide-react'
 import { format, parse, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import type { Task } from '../types'
@@ -13,11 +13,25 @@ interface TaskRowProps {
   showTypeColumn: boolean
 }
 
+function formatProspectPhone(phone: string): string {
+  const normalized = phone.replace(/\s+/g, '')
+  const match = normalized.match(/^\+33([67])(\d{2})(\d{2})(\d{2})(\d{2})$/)
+
+  if (!match) {
+    return phone
+  }
+
+  const [, firstDigit, part1, part2, part3, part4] = match
+  return `+33 ${firstDigit} ${part1} ${part2} ${part3} ${part4}`
+}
+
 export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
   const parsedDueDate = parse(task.createdAt, 'dd/MM HH:mm', getParisToday())
   const dueDateLabel = isValid(parsedDueDate)
     ? format(parsedDueDate, 'eee d MMM HH:mm', { locale: fr })
     : task.createdAt
+  const telHref = `tel:${task.prospectPhone.replace(/\s+/g, '')}`
+  const formattedPhone = formatProspectPhone(task.prospectPhone)
   const amountFormatted = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
@@ -41,6 +55,14 @@ export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
           </div>
         </div>
       </td>
+      <td className="px-3 py-2.5 whitespace-nowrap">
+        <a
+          href={telHref}
+          className="text-[12px] font-medium text-[#1a3a3a] hover:underline"
+        >
+          {formattedPhone}
+        </a>
+      </td>
       {showTypeColumn && (
         <td className="px-3 py-2.5">
           <TaskTypeBadge type={task.type} />
@@ -60,13 +82,13 @@ export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
             title="Marquer traité"
             className="p-2 rounded-md hover:bg-green-100 text-green-500 hover:text-green-600 transition-colors"
           >
-            <CheckCircle2 size={18} strokeWidth={2.2} />
+            <Check size={18} strokeWidth={2.5} />
           </button>
           <button
-            title="Voir détails"
+            title="Notes"
             className="p-2 rounded-md hover:bg-white text-gray-500 hover:text-gray-700 transition-colors"
           >
-            <Eye size={18} strokeWidth={2} />
+            <PenLine size={18} strokeWidth={2} />
           </button>
           <button
             title="Supprimer"
