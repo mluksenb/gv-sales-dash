@@ -1,4 +1,6 @@
+import { addDays, addWeeks, startOfWeek } from 'date-fns'
 import type { Appointment, DaySchedule, Task } from '../types'
+import { getParisToday } from '../utils/calendarMetrics'
 
 // Workday: 09:00–18:00. Default event duration 30 min.
 // All gaps are filled with "Suivi leads".
@@ -69,13 +71,19 @@ const friday: Appointment[] = [
   { id: 'fri-09', time: '16:00', name: '', category: 'Suivi leads', prospectType: 'Lead', timeHint: '2h' },
 ]
 
-export const weekSchedule: DaySchedule[] = [
-  { date: new Date(2026, 4, 4), appointments: monday },
-  { date: new Date(2026, 4, 5), appointments: tuesday },
-  { date: new Date(2026, 4, 6), appointments: wednesday },
-  { date: new Date(2026, 4, 7), appointments: thursday },
-  { date: new Date(2026, 4, 8), appointments: friday },
-]
+const WEEKDAY_APPOINTMENTS: Appointment[][] = [monday, tuesday, wednesday, thursday, friday]
+
+export function getWeekScheduleForOffset(weekOffset = 0, referenceDate = getParisToday()): DaySchedule[] {
+  const currentWeekStart = startOfWeek(referenceDate, { weekStartsOn: 1 })
+  const displayedWeekStart = addWeeks(currentWeekStart, weekOffset)
+
+  return WEEKDAY_APPOINTMENTS.map((appointments, index) => ({
+    date: addDays(displayedWeekStart, index),
+    appointments,
+  }))
+}
+
+export const weekSchedule: DaySchedule[] = getWeekScheduleForOffset()
 
 export const tasks: Task[] = [
   {

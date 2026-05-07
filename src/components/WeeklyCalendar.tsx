@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
-import { format, addWeeks, isSameDay } from 'date-fns'
+import { format, addDays, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { weekSchedule } from '../data/mockData'
+import { getWeekScheduleForOffset } from '../data/mockData'
 import { DayColumn } from './DayColumn'
 import { WeeklySummary } from './WeeklySummary'
 import type { AppointmentCategory, DaySchedule } from '../types'
@@ -18,9 +18,9 @@ export function WeeklyCalendar() {
   const [activeFilters, setActiveFilters] = useState<AppointmentCategory[]>(EVENT_FILTERS)
   const [expanded, setExpanded] = useState(true)
   const today = getParisToday()
-
-  const currentWeekStart = addWeeks(new Date(2026, 4, 4), weekOffset)
-  const currentWeekEnd = addWeeks(new Date(2026, 4, 10), weekOffset)
+  const weekSchedule = getWeekScheduleForOffset(weekOffset, today)
+  const currentWeekStart = weekSchedule[0].date
+  const currentWeekEnd = addDays(currentWeekStart, 6)
 
   const dateRangeLabel = `${format(currentWeekStart, 'd MMM', { locale: fr })} - ${format(currentWeekEnd, 'd MMM yyyy', { locale: fr })}`
   const activeFilterSet = new Set(activeFilters)

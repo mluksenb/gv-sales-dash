@@ -22,8 +22,8 @@ interface WeeklySummaryProps {
   weekSchedule: DaySchedule[]
 }
 
-const METRIC_LABEL_WIDTH_CLASS = 'w-[80px]'
-const METRIC_VALUE_WIDTH_CLASS = 'w-[74px]'
+const METRIC_LABEL_WIDTH_CLASS = 'w-[72px]'
+const METRIC_VALUE_WIDTH_CLASS = 'w-[66px]'
 const WEEKLY_CATEGORY_ORDER = ['Rendez-vous clients', 'Suivi leads', 'Care', 'Interne', 'OOO'] as const
 
 export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {

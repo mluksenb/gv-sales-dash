@@ -28,8 +28,8 @@ interface DayColumnProps {
   collapsed?: boolean
 }
 
-const METRIC_LABEL_WIDTH_CLASS = 'w-[80px]'
-const METRIC_VALUE_WIDTH_CLASS = 'w-[74px]'
+const METRIC_LABEL_WIDTH_CLASS = 'w-[72px]'
+const METRIC_VALUE_WIDTH_CLASS = 'w-[66px]'
 
 export function DayColumn({
   day,
@@ -218,8 +218,7 @@ export function DayColumn({
 
       {!collapsed && (
         <>
-          <div className={`mx-2 border-t ${isToday ? 'border-[#1a3a3a]/20' : 'border-gray-200'}`} />
-          <div className="flex-1 p-2 space-y-1.5">
+          <div className="flex-1 px-2 pb-2 pt-3 space-y-1.5">
             {day.appointments.map((apt, index) => (
               <div
                 key={apt.id}

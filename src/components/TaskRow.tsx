@@ -1,8 +1,11 @@
 import { CheckCircle2, Eye, X } from 'lucide-react'
+import { format, parse, isValid } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import type { Task } from '../types'
 import { TaskTypeBadge, ProspectBadge, TierBadge } from './Badge'
 import { SLAIndicator } from './SLAIndicator'
 import { PROJECT_STATUS_FR } from '../lib/projectLabels'
+import { getParisToday } from '../utils/calendarMetrics'
 
 interface TaskRowProps {
   task: Task
@@ -11,6 +14,10 @@ interface TaskRowProps {
 }
 
 export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
+  const parsedDueDate = parse(task.createdAt, 'dd/MM HH:mm', getParisToday())
+  const dueDateLabel = isValid(parsedDueDate)
+    ? format(parsedDueDate, 'eee d MMM HH:mm', { locale: fr })
+    : task.createdAt
   const amountFormatted = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
@@ -21,15 +28,10 @@ export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
     <tr className={`group hover:bg-amber-100/60 transition-colors border-b border-gray-100 last:border-0 ${isEven ? 'bg-white' : 'bg-[#fdfcfa]'}`}>
       <td className="px-3 py-2.5 whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <span className="text-[12px] text-gray-900 font-medium">{task.createdAt}</span>
+          <span className="text-[12px] text-gray-900 font-medium">{dueDateLabel}</span>
           <SLAIndicator minutes={task.slaMinutes} />
         </div>
       </td>
-      {showTypeColumn && (
-        <td className="px-3 py-2.5">
-          <TaskTypeBadge type={task.type} />
-        </td>
-      )}
       <td className="px-3 py-2.5">
         <div>
           <span className="text-[12px] text-gray-900 font-medium">{task.prospectName}</span>
@@ -39,6 +41,11 @@ export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
           </div>
         </div>
       </td>
+      {showTypeColumn && (
+        <td className="px-3 py-2.5">
+          <TaskTypeBadge type={task.type} />
+        </td>
+      )}
       <td className="pl-1 pr-1 py-2.5">
         <div>
           <span className="text-[12px] text-gray-900">{task.projectName}</span>

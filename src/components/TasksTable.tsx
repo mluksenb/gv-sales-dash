@@ -110,7 +110,7 @@ export function TasksTable() {
             >
               {tab.label}
               <span className={`ml-1.5 text-[11px] font-semibold ${
-                activeTab === tab.value ? 'text-gray-500' : 'text-gray-500'
+                activeTab === tab.value ? 'text-gray-500' : 'text-white'
               }`}>
                 {tabCounts[tab.value]}
               </span>
@@ -210,16 +210,16 @@ export function TasksTable() {
           <thead>
             <tr className="bg-gray-900 text-white">
               <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
-                Création
+                Échéance
+              </th>
+              <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+                Prospect
               </th>
               {showTypeColumn && (
                 <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
                   Type
                 </th>
               )}
-              <th className="px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
-                Prospect
-              </th>
               <th className="pl-1 pr-1 py-2.5 text-left text-[11px] font-semibold tracking-wide">
                 Projet
               </th>
