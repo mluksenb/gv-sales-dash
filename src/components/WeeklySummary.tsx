@@ -68,6 +68,7 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
   }
 
   const meetingPercent = Math.min((totalMeetingMinutes / WEEKLY_MEETING_LIMIT_MINUTES) * 100, 100)
+  const noShowPercent = 25
   const callsPercent = totalCallsExpected > 0 ? Math.min((totalCallsDone / totalCallsExpected) * 100, 100) : 0
   const tasksPercent = totalTasksTotal > 0 ? Math.min((totalTasksDone / totalTasksTotal) * 100, 100) : 0
   const tasksUnderSlaPercent = totalTasksDone > 0 ? Math.min((totalTasksDoneUnderSla / totalTasksDone) * 100, 100) : 0
@@ -118,6 +119,23 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
             </div>
             <span className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}>
               {totalMeetingCount}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-gray-500`}>
+              No-shows
+            </span>
+            <div className="flex-1">
+              <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${noShowPercent}%`, backgroundColor: progressColor(noShowPercent, false) }}
+                />
+              </div>
+            </div>
+            <span className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}>
+              {Math.round(noShowPercent)}%
             </span>
           </div>
 
