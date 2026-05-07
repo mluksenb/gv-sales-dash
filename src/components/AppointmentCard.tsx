@@ -1,3 +1,4 @@
+import { Ban } from 'lucide-react'
 import type { Appointment } from '../types'
 import { ProspectBadge, TierBadge, TelBadge } from './Badge'
 import {
@@ -27,7 +28,7 @@ function formatDurationLabel(timeHint?: string): string {
 }
 
 export function AppointmentCard({ appointment }: AppointmentCardProps) {
-  const { time, name, category, prospectType, tier, hasTel, timeHint } = appointment
+  const { time, name, category, prospectType, tier, hasTel, timeHint, noShow } = appointment
   const durationLabel = formatDurationLabel(timeHint)
   const appointmentCategory = resolveAppointmentCategory(category)
   const isClientMeeting = appointmentCategory === CLIENT_MEETING_CATEGORY
@@ -39,16 +40,21 @@ export function AppointmentCard({ appointment }: AppointmentCardProps) {
       className={`group relative rounded-lg px-2.5 py-2 border transition-all duration-200 cursor-pointer ${
         eventPalette.card
       } hover:shadow-md hover:-translate-y-0.5`}
+      style={noShow ? { borderStyle: 'dashed', borderWidth: '1.5px', borderColor: 'rgb(239 68 68 / 0.5)' } : undefined}
     >
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-1">
-            <span className={`text-sm font-bold leading-tight ${eventPalette.cardTitle}`}>
+            <span className={`text-sm font-bold leading-tight ${eventPalette.cardTitle} ${noShow ? 'line-through' : ''}`}>
               {time}
             </span>
-            <span className={`text-[11px] font-medium ${eventPalette.cardSubtitle}`}>
-              {durationLabel}
-            </span>
+            {noShow ? (
+              <Ban size={14} className={`shrink-0 ${eventPalette.cardTitle} opacity-60`} />
+            ) : (
+              <span className={`text-[11px] font-medium ${eventPalette.cardSubtitle}`}>
+                {durationLabel}
+              </span>
+            )}
           </div>
           <p className={`text-[11px] mt-0.5 truncate font-medium ${eventPalette.cardSubtitle}`}>
             {eventTitle}

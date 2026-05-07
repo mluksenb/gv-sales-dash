@@ -1,7 +1,6 @@
 import { addDays, addWeeks, startOfWeek } from 'date-fns'
 import type { Appointment, DaySchedule, Task } from '../types'
-import { getParisToday } from '../utils/calendarMetrics'
-import { parseDurationMinutes } from '../utils/calendarMetrics'
+import { getParisToday, getEffectiveDurationMinutes } from '../utils/calendarMetrics'
 
 const WORKDAY_START = 9 * 60
 const WORKDAY_END = 18 * 60
@@ -47,7 +46,7 @@ function fillWithSuiviLeads(fixedAppointments: Appointment[], dayPrefix: string)
       })
     }
     result.push(apt)
-    const aptDuration = parseDurationMinutes(apt.timeHint)
+    const aptDuration = getEffectiveDurationMinutes(apt)
     cursor = aptStart + aptDuration
   }
 
@@ -71,7 +70,7 @@ const mondayFixed: Appointment[] = [
   { id: 'mon-03', time: '11:00', name: 'Isabelle Renard', category: 'Rendez-vous clients', prospectType: 'Client', tier: 'Tier 1' },
   { id: 'mon-05', time: '13:30', name: 'Support: dossier de souscription', category: 'Care', prospectType: 'Client', timeHint: '45 min' },
   { id: 'mon-07', time: '15:00', name: 'Pierre-Antoine Vidal', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
-  { id: 'mon-09', time: '17:00', name: 'Baptiste Girard', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
+  { id: 'mon-09', time: '17:00', name: 'Baptiste Girard', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2', noShow: true },
 ]
 
 const tuesdayFixed: Appointment[] = [
@@ -79,7 +78,7 @@ const tuesdayFixed: Appointment[] = [
   { id: 'tue-02', time: '09:30', name: 'Patrick GARNIER', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
   { id: 'tue-03', time: '10:00', name: 'Sébastien Fontaine', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 1' },
   { id: 'tue-05', time: '11:00', name: 'Camille Lecomte', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 1' },
-  { id: 'tue-06', time: '11:30', name: 'Aurélie Bonnet', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
+  { id: 'tue-06', time: '11:30', name: 'Aurélie Bonnet', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2', noShow: true },
   { id: 'tue-08', time: '14:00', name: '1:1 Félix <> Etienne', category: 'Interne', prospectType: 'Client', timeHint: '1h' },
   { id: 'tue-09', time: '15:00', name: 'Margaux Chevalier', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 1' },
   { id: 'tue-11', time: '17:00', name: 'Romain Delacroix', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
@@ -88,7 +87,7 @@ const tuesdayFixed: Appointment[] = [
 const wednesdayFixed: Appointment[] = [
   { id: 'wed-01', time: '09:00', name: 'Nicolas Aubert', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 1' },
   { id: 'wed-03', time: '10:30', name: 'Véronique Moulin', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 1' },
-  { id: 'wed-05', time: '12:00', name: 'Elise Roux', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
+  { id: 'wed-05', time: '12:00', name: 'Elise Roux', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2', noShow: true },
   { id: 'wed-07', time: '14:15', name: 'Formation Goodoffice', category: 'Interne', prospectType: 'Lead', timeHint: '45 min' },
   { id: 'wed-08', time: '15:00', name: 'Sandrine Dupont', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
   { id: 'wed-10', time: '16:30', name: 'Frédéric Lemaire', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 1' },
@@ -99,7 +98,7 @@ const thursdayFixed: Appointment[] = [
   { id: 'thu-01', time: '09:00', name: 'Dentiste', category: 'OOO', prospectType: 'Lead', timeHint: '1h' },
   { id: 'thu-02', time: '10:00', name: 'Benoît CHARRIER', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
   { id: 'thu-04', time: '11:00', name: 'Céline de La Croix', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 3' },
-  { id: 'thu-07', time: '15:30', name: 'Antoine Morin', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2', hasTel: true },
+  { id: 'thu-07', time: '15:30', name: 'Antoine Morin', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2', hasTel: true, noShow: true },
   { id: 'thu-09', time: '17:00', name: 'Pauline Fabre', category: 'Rendez-vous clients', prospectType: 'Lead' },
 ]
 
@@ -109,7 +108,7 @@ const fridayFixed: Appointment[] = [
   { id: 'fri-03', time: '10:00', name: 'Stéphanie Colin', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 2' },
   { id: 'fri-06', time: '14:00', name: 'Coaching appels', category: 'Interne', prospectType: 'Lead', timeHint: '1h' },
   { id: 'fri-07', time: '15:00', name: 'François-Xavier Aumont', category: 'Rendez-vous clients', prospectType: 'Client', tier: 'Tier 1' },
-  { id: 'fri-08', time: '15:30', name: 'Valérie Baudouin', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 3' },
+  { id: 'fri-08', time: '15:30', name: 'Valérie Baudouin', category: 'Rendez-vous clients', prospectType: 'Lead', tier: 'Tier 3', noShow: true },
 ]
 
 const monday = fillWithSuiviLeads(mondayFixed, 'mon')

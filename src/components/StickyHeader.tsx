@@ -6,7 +6,7 @@ import {
   CLIENT_MEETING_CATEGORY,
   resolveAppointmentCategory,
 } from '../constants/calendarEventStyles'
-import { parseDurationMinutes, getParisTimeMinutes, getParisToday } from '../utils/calendarMetrics'
+import { getEffectiveDurationMinutes, getParisTimeMinutes, getParisToday } from '../utils/calendarMetrics'
 import type { Appointment, AppointmentCategory } from '../types'
 
 const INDICATOR_STYLES: Record<
@@ -88,7 +88,7 @@ function getEventState(): EventState {
   for (const apt of todaySchedule.appointments) {
     const [h, m] = apt.time.split(':').map(Number)
     const startMin = h * 60 + m
-    const duration = parseDurationMinutes(apt.timeHint)
+    const duration = getEffectiveDurationMinutes(apt)
     const endMin = startMin + duration
 
     if (startMin > currentMinutes && startMin - currentMinutes <= 15) {

@@ -20,6 +20,7 @@ export interface Appointment {
   hasTel?: boolean
   isNew?: boolean
   timeHint?: string
+  noShow?: boolean
 }
 
 export interface DaySchedule {

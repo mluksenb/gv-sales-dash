@@ -8,6 +8,7 @@ import {
 export const DAILY_MEETING_LIMIT_MINUTES = 4 * 60
 export const WEEKLY_MEETING_LIMIT_MINUTES = DAILY_MEETING_LIMIT_MINUTES * 5
 export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30
+export const NO_SHOW_DURATION_MINUTES = 10
 export const EXPECTED_CALLS_PER_HOUR = 10
 export const DAILY_TASK_RANGE: [number, number] = [4, 12]
 export const DAILY_COLLECTE_TARGET = 15_000
@@ -64,6 +65,11 @@ export function parseDurationMinutes(timeHint?: string): number {
   const parsedDuration = hours * 60 + minutes
 
   return parsedDuration > 0 ? parsedDuration : DEFAULT_APPOINTMENT_DURATION_MINUTES
+}
+
+export function getEffectiveDurationMinutes(appointment: Appointment): number {
+  if (appointment.noShow) return NO_SHOW_DURATION_MINUTES
+  return parseDurationMinutes(appointment.timeHint)
 }
 
 export function progressColor(percent: number, invert: boolean): string {

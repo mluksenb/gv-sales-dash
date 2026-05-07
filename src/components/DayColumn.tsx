@@ -10,7 +10,7 @@ import {
   CLIENT_MEETING_CATEGORY,
   LEAD_FOLLOW_UP_CATEGORY,
   filterByCategory,
-  parseDurationMinutes,
+  getEffectiveDurationMinutes,
   formatMeetingMinutes,
   formatK,
   formatKEuros,
@@ -43,11 +43,11 @@ export function DayColumn({
   const clientMeetingAppointments = filterByCategory(allAppointments, CLIENT_MEETING_CATEGORY)
   const leadFollowUpAppointments = filterByCategory(allAppointments, LEAD_FOLLOW_UP_CATEGORY)
   const meetingMinutes = clientMeetingAppointments.reduce(
-    (total, appointment) => total + parseDurationMinutes(appointment.timeHint),
+    (total, appointment) => total + getEffectiveDurationMinutes(appointment),
     0,
   )
   const leadFollowUpMinutes = leadFollowUpAppointments.reduce(
-    (total, appointment) => total + parseDurationMinutes(appointment.timeHint),
+    (total, appointment) => total + getEffectiveDurationMinutes(appointment),
     0,
   )
   const meetingProgressPercent = Math.min((meetingMinutes / DAILY_MEETING_LIMIT_MINUTES) * 100, 100)

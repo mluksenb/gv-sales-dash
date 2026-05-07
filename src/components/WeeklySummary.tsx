@@ -8,7 +8,7 @@ import {
   CLIENT_MEETING_CATEGORY,
   LEAD_FOLLOW_UP_CATEGORY,
   filterByCategory,
-  parseDurationMinutes,
+  getEffectiveDurationMinutes,
   formatMeetingMinutes,
   formatK,
   formatKEuros,
@@ -29,6 +29,7 @@ const WEEKLY_CATEGORY_ORDER = ['Rendez-vous clients', 'Suivi leads', 'Care', 'In
 export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
   const categoryMinutes = new Map(EVENT_FILTERS.map((category) => [category, 0]))
   let totalMeetingCount = 0
+  let totalNoShowCount = 0
   let totalMeetingMinutes = 0
   let totalLeadMinutes = 0
   let totalCallsDone = 0
@@ -41,7 +42,7 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
   for (const day of weekSchedule) {
     for (const appointment of day.appointments) {
       const category = resolveAppointmentCategory(appointment.category)
-      const duration = parseDurationMinutes(appointment.timeHint)
+      const duration = getEffectiveDurationMinutes(appointment)
       categoryMinutes.set(category, (categoryMinutes.get(category) ?? 0) + duration)
     }
 
@@ -49,9 +50,10 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
     const leadFollowUps = filterByCategory(day.appointments, LEAD_FOLLOW_UP_CATEGORY)
 
     totalMeetingCount += clientMeetings.length
-    totalMeetingMinutes += clientMeetings.reduce((sum, a) => sum + parseDurationMinutes(a.timeHint), 0)
+    totalNoShowCount += clientMeetings.filter((a) => a.noShow).length
+    totalMeetingMinutes += clientMeetings.reduce((sum, a) => sum + getEffectiveDurationMinutes(a), 0)
 
-    const leadMinutes = leadFollowUps.reduce((sum, a) => sum + parseDurationMinutes(a.timeHint), 0)
+    const leadMinutes = leadFollowUps.reduce((sum, a) => sum + getEffectiveDurationMinutes(a), 0)
     totalLeadMinutes += leadMinutes
 
     const expectedCalls = Math.round((leadMinutes / 60) * EXPECTED_CALLS_PER_HOUR)
@@ -68,7 +70,7 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
   }
 
   const meetingPercent = Math.min((totalMeetingMinutes / WEEKLY_MEETING_LIMIT_MINUTES) * 100, 100)
-  const noShowPercent = 25
+  const noShowPercent = totalMeetingCount > 0 ? Math.round((totalNoShowCount / totalMeetingCount) * 100) : 0
   const callsPercent = totalCallsExpected > 0 ? Math.min((totalCallsDone / totalCallsExpected) * 100, 100) : 0
   const tasksPercent = totalTasksTotal > 0 ? Math.min((totalTasksDone / totalTasksTotal) * 100, 100) : 0
   const tasksUnderSlaPercent = totalTasksDone > 0 ? Math.min((totalTasksDoneUnderSla / totalTasksDone) * 100, 100) : 0
