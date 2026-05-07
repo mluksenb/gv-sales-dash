@@ -69,6 +69,16 @@ type EventState =
   | { kind: 'upcoming'; appointment: Appointment; startsInMin: number }
   | null
 
+function formatMinutesLabel(totalMinutes: number): string {
+  if (totalMinutes <= 60) {
+    return `${totalMinutes} min`
+  }
+
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${hours} h ${minutes} min`
+}
+
 function getEventState(): EventState {
   const todaySchedule = weekSchedule.find((day) => isSameDay(day.date, TODAY))
   if (!todaySchedule) return null
@@ -156,8 +166,8 @@ export function StickyHeader() {
             <span className={`text-xs ${palette.text} opacity-30`}>—</span>
             <span className={`text-xs font-medium ${palette.countdown}`}>
               {state.kind === 'in_progress'
-                ? `encore ${state.remainingMin} min`
-                : `dans ${state.startsInMin} min`}
+                ? `encore ${formatMinutesLabel(state.remainingMin)}`
+                : `dans ${formatMinutesLabel(state.startsInMin)}`}
             </span>
           </div>
         ) : (

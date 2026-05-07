@@ -17,3 +17,16 @@
 body {
   background-color: #faf8f5;
 }
+
+button:not(:disabled),
+[role="button"],
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled),
+input[type="reset"]:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
+}
