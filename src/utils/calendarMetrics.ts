@@ -101,8 +101,8 @@ export function appointmentProgressPercent(count: number, target: number = DAILY
 }
 
 export function appointmentProgressColor(count: number): string {
-  if (count <= 3) return 'rgb(234, 67, 53)'
-  if (count <= 5) return 'rgb(251, 188, 4)'
+  if (count <= 2) return 'rgb(234, 67, 53)'
+  if (count <= 4) return 'rgb(251, 188, 4)'
   return 'rgb(52, 168, 55)'
 }
 

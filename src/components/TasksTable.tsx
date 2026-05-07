@@ -4,7 +4,7 @@ import { tasks } from '../data/mockData'
 import { TaskRow } from './TaskRow'
 import type { TaskType, ProjectType } from '../types'
 
-const TASK_TYPES: TaskType[] = ['Rappel explicite', 'Rétention livret', 'Tél récolté']
+const TASK_TYPES: TaskType[] = ['Demande de rappel', 'Drop', 'Rétention livret']
 
 type TabValue = 'all' | TaskType
 type SortOption = 'default' | 'most_late' | 'biggest_amount'

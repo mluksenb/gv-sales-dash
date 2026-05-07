@@ -43,12 +43,13 @@ export function DayColumn({
   const dateNum = format(day.date, 'd')
   const month = format(day.date, 'MMM', { locale: fr }).replace('.', '')
   const clientMeetingAppointments = filterByCategory(allAppointments, CLIENT_MEETING_CATEGORY)
+  const confirmedClientMeetingAppointments = clientMeetingAppointments.filter((appointment) => !appointment.noShow)
   const leadFollowUpAppointments = filterByCategory(allAppointments, LEAD_FOLLOW_UP_CATEGORY)
   const leadFollowUpMinutes = leadFollowUpAppointments.reduce(
     (total, appointment) => total + getEffectiveDurationMinutes(appointment),
     0,
   )
-  const meetingCount = clientMeetingAppointments.length
+  const meetingCount = confirmedClientMeetingAppointments.length
   const meetingProgressPercent = appointmentProgressPercent(meetingCount)
   const meetingSummary = `${meetingCount} / ${DAILY_APPOINTMENT_TARGET}`
   const leadFollowUpSummary = formatMeetingMinutes(leadFollowUpMinutes)

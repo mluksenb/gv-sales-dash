@@ -24,9 +24,9 @@ export function TierBadge({ tier }: { tier: TierLevel }) {
 }
 
 const taskTypeConfig: Record<TaskType, { bg: string; text: string; border: string }> = {
-  'Rappel explicite': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  'Demande de rappel': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
   'Rétention livret': { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200' },
-  'Tél récolté': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+  Drop: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
 }
 
 export function TaskTypeBadge({ type }: { type: TaskType }) {

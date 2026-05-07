@@ -135,7 +135,7 @@ export const tasks: Task[] = [
   {
     id: 'task-1',
     createdAt: '06/05 20:32',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 2',
     prospectType: 'Lead',
@@ -167,7 +167,7 @@ export const tasks: Task[] = [
   {
     id: 'task-3',
     createdAt: '06/05 13:40',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 2',
     prospectType: 'Lead',
@@ -183,7 +183,7 @@ export const tasks: Task[] = [
   {
     id: 'task-4',
     createdAt: '05/05 15:15',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 3',
     prospectType: 'Lead',
@@ -199,7 +199,7 @@ export const tasks: Task[] = [
   {
     id: 'task-5',
     createdAt: '05/05 14:34',
-    type: 'Tél récolté',
+    type: 'Drop',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 3',
     prospectType: 'Client',
@@ -215,7 +215,7 @@ export const tasks: Task[] = [
   {
     id: 'task-6',
     createdAt: '05/05 14:25',
-    type: 'Tél récolté',
+    type: 'Drop',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 2',
     prospectType: 'Lead',
@@ -231,7 +231,7 @@ export const tasks: Task[] = [
   {
     id: 'task-7',
     createdAt: '04/05 09:22',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 2',
     prospectType: 'Lead',
@@ -247,7 +247,7 @@ export const tasks: Task[] = [
   {
     id: 'task-8',
     createdAt: '03/05 16:40',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 1',
     prospectType: 'Lead',
@@ -279,7 +279,7 @@ export const tasks: Task[] = [
   {
     id: 'task-10',
     createdAt: '02/05 18:30',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 3',
     prospectType: 'Lead',
@@ -295,7 +295,7 @@ export const tasks: Task[] = [
   {
     id: 'task-11',
     createdAt: '02/05 14:12',
-    type: 'Tél récolté',
+    type: 'Drop',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 2',
     prospectType: 'Lead',
@@ -311,7 +311,7 @@ export const tasks: Task[] = [
   {
     id: 'task-12',
     createdAt: '01/05 23:18',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 1',
     prospectType: 'Lead',
@@ -327,7 +327,7 @@ export const tasks: Task[] = [
   {
     id: 'task-13',
     createdAt: '01/05 21:45',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 1',
     prospectType: 'Lead',
@@ -343,7 +343,7 @@ export const tasks: Task[] = [
   {
     id: 'task-14',
     createdAt: '01/05 20:45',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 2',
     prospectType: 'Lead',
@@ -359,7 +359,7 @@ export const tasks: Task[] = [
   {
     id: 'task-15',
     createdAt: '01/05 20:13',
-    type: 'Rappel explicite',
+    type: 'Demande de rappel',
     conseiller: 'Étienne Moreau',
     tier: 'Tier 1',
     prospectType: 'Lead',

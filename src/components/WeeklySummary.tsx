@@ -30,6 +30,7 @@ const WEEKLY_CATEGORY_ORDER = ['Rendez-vous clients', 'Suivi leads', 'Care', 'In
 
 export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
   const categoryMinutes = new Map(EVENT_FILTERS.map((category) => [category, 0]))
+  let totalClientMeetingCount = 0
   let totalMeetingCount = 0
   let totalNoShowCount = 0
   let totalLeadMinutes = 0
@@ -48,9 +49,11 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
     }
 
     const clientMeetings = filterByCategory(day.appointments, CLIENT_MEETING_CATEGORY)
+    const confirmedClientMeetings = clientMeetings.filter((appointment) => !appointment.noShow)
     const leadFollowUps = filterByCategory(day.appointments, LEAD_FOLLOW_UP_CATEGORY)
 
-    totalMeetingCount += clientMeetings.length
+    totalClientMeetingCount += clientMeetings.length
+    totalMeetingCount += confirmedClientMeetings.length
     totalNoShowCount += clientMeetings.filter((a) => a.noShow).length
 
     const leadMinutes = leadFollowUps.reduce((sum, a) => sum + getEffectiveDurationMinutes(a), 0)
@@ -71,7 +74,8 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
 
   const meetingPercent = appointmentProgressPercent(totalMeetingCount, WEEKLY_APPOINTMENT_TARGET)
   const averageDailyMeetingCount = totalMeetingCount / 5
-  const noShowPercent = totalMeetingCount > 0 ? Math.round((totalNoShowCount / totalMeetingCount) * 100) : 0
+  const noShowPercent =
+    totalClientMeetingCount > 0 ? Math.round((totalNoShowCount / totalClientMeetingCount) * 100) : 0
   const callsPercent = totalCallsExpected > 0 ? Math.min((totalCallsDone / totalCallsExpected) * 100, 100) : 0
   const tasksPercent = totalTasksTotal > 0 ? Math.min((totalTasksDone / totalTasksTotal) * 100, 100) : 0
   const tasksUnderSlaPercent = totalTasksDone > 0 ? Math.min((totalTasksDoneUnderSla / totalTasksDone) * 100, 100) : 0
