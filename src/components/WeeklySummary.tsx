@@ -22,7 +22,7 @@ interface WeeklySummaryProps {
   weekSchedule: DaySchedule[]
 }
 
-const METRIC_LABEL_WIDTH_CLASS = 'w-[96px]'
+const METRIC_LABEL_WIDTH_CLASS = 'w-[80px]'
 const METRIC_VALUE_WIDTH_CLASS = 'w-[74px]'
 const WEEKLY_CATEGORY_ORDER = ['Rendez-vous clients', 'Suivi leads', 'Care', 'Interne', 'OOO'] as const
 
@@ -156,7 +156,7 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
           </div>
           <div className="flex items-center gap-2">
             <span className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-gray-500`}>
-              SLA Tâches
+              SLA tâches
             </span>
             <div className="flex-1">
               <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">

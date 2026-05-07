@@ -28,7 +28,7 @@ interface DayColumnProps {
   collapsed?: boolean
 }
 
-const METRIC_LABEL_WIDTH_CLASS = 'w-[96px]'
+const METRIC_LABEL_WIDTH_CLASS = 'w-[80px]'
 const METRIC_VALUE_WIDTH_CLASS = 'w-[74px]'
 
 export function DayColumn({
@@ -169,7 +169,7 @@ export function DayColumn({
             <span
               className={`${METRIC_LABEL_WIDTH_CLASS} text-[11px] font-medium whitespace-nowrap text-gray-500`}
             >
-              SLA Tâches
+              SLA tâches
             </span>
             <div className="flex-1">
               <div className="h-1.5 rounded-full overflow-hidden bg-gray-200">
