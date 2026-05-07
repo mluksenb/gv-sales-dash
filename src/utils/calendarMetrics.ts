@@ -51,10 +51,15 @@ export function parseDurationMinutes(timeHint?: string): number {
 
   const normalized = timeHint.toLowerCase().trim()
   const hoursMatch = normalized.match(/(\d+)\s*h/)
-  const minutesMatch = normalized.match(/(\d+)\s*min/)
+  const compactHourMinutesMatch = normalized.match(/h\s*(\d{1,2})(?:\s*(?:m|min))?/)
+  const minutesMatch = normalized.match(/(\d+)\s*(?:m|min)\b/)
 
   const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) : 0
-  const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) : 0
+  const minutes = compactHourMinutesMatch
+    ? Number.parseInt(compactHourMinutesMatch[1], 10)
+    : minutesMatch
+      ? Number.parseInt(minutesMatch[1], 10)
+      : 0
 
   const parsedDuration = hours * 60 + minutes
 

@@ -5,18 +5,34 @@ import {
   EVENT_CATEGORY_STYLES,
   resolveAppointmentCategory,
 } from '../constants/calendarEventStyles'
+import { parseDurationMinutes } from '../utils/calendarMetrics'
 
 interface AppointmentCardProps {
   appointment: Appointment
 }
 
+function formatDurationLabel(timeHint?: string): string {
+  const totalMinutes = parseDurationMinutes(timeHint)
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`
+  }
+
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (minutes === 0) {
+    return `${hours}h`
+  }
+  return `${hours}h${minutes.toString().padStart(2, '0')}m`
+}
+
 export function AppointmentCard({ appointment }: AppointmentCardProps) {
   const { time, name, category, prospectType, tier, hasTel, timeHint } = appointment
-  const durationLabel = timeHint ?? '30 min'
+  const durationLabel = formatDurationLabel(timeHint)
   const appointmentCategory = resolveAppointmentCategory(category)
   const isClientMeeting = appointmentCategory === CLIENT_MEETING_CATEGORY
   const eventPalette = EVENT_CATEGORY_STYLES[appointmentCategory]
-  const eventTitle = isClientMeeting ? name : appointmentCategory
+  const eventTitle = name.trim() || appointmentCategory
 
   return (
     <div
