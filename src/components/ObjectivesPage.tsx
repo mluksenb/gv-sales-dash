@@ -10,7 +10,6 @@ import {
   appointmentProgressColor,
   formatK,
   formatKEuros,
-  WEEKLY_COLLECTE_TARGET,
   DAILY_COLLECTE_TARGET,
   EXPECTED_CALLS_PER_HOUR,
   getParisToday,
