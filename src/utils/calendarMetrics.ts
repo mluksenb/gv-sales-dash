@@ -181,4 +181,88 @@ export function getActiveAppointmentIndex(appointments: Appointment[]): number {
   return activeIndex
 }
 
+export interface TeamMemberMetrics {
+  meetingsDone: number
+  meetingsTarget: number
+  meetingPercent: number
+  noShowPercent: number
+  callsDone: number
+  callsExpected: number
+  callsPercent: number
+  tasksDone: number
+  tasksTotal: number
+  tasksPercent: number
+  slaPercent: number
+  collecte: number
+  collecteTarget: number
+  collectePercent: number
+}
+
+export function computeWeeklyMetrics(
+  weekSchedule: { date: Date; appointments: Appointment[] }[],
+  collecteTarget = WEEKLY_COLLECTE_TARGET,
+  memberSeed = 0,
+  callsPerHour = EXPECTED_CALLS_PER_HOUR,
+): TeamMemberMetrics {
+  let totalClientMeetingCount = 0
+  let totalMeetingCount = 0
+  let totalNoShowCount = 0
+  let totalCallsDone = 0
+  let totalCallsExpected = 0
+  let totalTasksDone = 0
+  let totalTasksTotal = 0
+  let totalTasksDoneUnderSla = 0
+  let totalCollecte = 0
+
+  for (const day of weekSchedule) {
+    const clientMeetings = filterByCategory(day.appointments, CLIENT_MEETING_CATEGORY)
+    const confirmedClientMeetings = clientMeetings.filter((a) => !a.noShow)
+    const leadFollowUps = filterByCategory(day.appointments, LEAD_FOLLOW_UP_CATEGORY)
+
+    totalClientMeetingCount += clientMeetings.length
+    totalMeetingCount += confirmedClientMeetings.length
+    totalNoShowCount += clientMeetings.filter((a) => a.noShow).length
+
+    const leadMinutes = leadFollowUps.reduce((sum, a) => sum + getEffectiveDurationMinutes(a), 0)
+
+    const expectedCalls = Math.round((leadMinutes / 60) * callsPerHour)
+    const seedDate = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate() + memberSeed)
+    const ratio = getSimulatedCallCompletionRatio(seedDate)
+    totalCallsDone += Math.round(expectedCalls * ratio)
+    totalCallsExpected += expectedCalls
+
+    const tasks = getSimulatedTasks(seedDate)
+    totalTasksDone += tasks.done
+    totalTasksTotal += tasks.total
+    totalTasksDoneUnderSla += tasks.doneUnderSla
+
+    totalCollecte += getSimulatedCollecte(seedDate)
+  }
+
+  const meetingPercent = appointmentProgressPercent(totalMeetingCount, WEEKLY_APPOINTMENT_TARGET)
+  const noShowPercent =
+    totalClientMeetingCount > 0 ? Math.round((totalNoShowCount / totalClientMeetingCount) * 100) : 0
+  const callsPercent = totalCallsExpected > 0 ? Math.min((totalCallsDone / totalCallsExpected) * 100, 100) : 0
+  const tasksPercent = totalTasksTotal > 0 ? Math.min((totalTasksDone / totalTasksTotal) * 100, 100) : 0
+  const slaPercent = totalTasksDone > 0 ? Math.min((totalTasksDoneUnderSla / totalTasksDone) * 100, 100) : 0
+  const collectePercent = Math.min((totalCollecte / collecteTarget) * 100, 100)
+
+  return {
+    meetingsDone: totalMeetingCount,
+    meetingsTarget: WEEKLY_APPOINTMENT_TARGET,
+    meetingPercent,
+    noShowPercent,
+    callsDone: totalCallsDone,
+    callsExpected: totalCallsExpected,
+    callsPercent,
+    tasksDone: totalTasksDone,
+    tasksTotal: totalTasksTotal,
+    tasksPercent,
+    slaPercent,
+    collecte: totalCollecte,
+    collecteTarget,
+    collectePercent,
+  }
+}
+
 export { CLIENT_MEETING_CATEGORY, LEAD_FOLLOW_UP_CATEGORY }

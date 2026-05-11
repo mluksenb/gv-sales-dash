@@ -377,3 +377,56 @@ export const tasks: Task[] = [
 export const advisorName = 'Étienne Moreau'
 export const totalRdvClients = 21
 export const totalTasks = 42
+
+export interface TeamMember {
+  id: string
+  name: string
+}
+
+export const teamMembers: TeamMember[] = [
+  { id: 'tm-1', name: 'Étienne Moreau' },
+  { id: 'tm-2', name: 'Camille Lefèvre' },
+  { id: 'tm-3', name: 'Hugo Bernard' },
+  { id: 'tm-4', name: 'Manon Petit' },
+  { id: 'tm-5', name: 'Théo Roux' },
+  { id: 'tm-6', name: 'Léa Fournier' },
+]
+
+export function getTeamMemberWeekSchedule(memberId: string, weekOffset = 0): DaySchedule[] {
+  const memberIndex = teamMembers.findIndex((m) => m.id === memberId)
+  const seedShift = (memberIndex + 1) * 7
+
+  const baseSchedule = getWeekScheduleForOffset(weekOffset)
+
+  return baseSchedule.map((day, dayIndex) => {
+    const shiftedDate = new Date(
+      day.date.getFullYear(),
+      day.date.getMonth(),
+      day.date.getDate() + seedShift + dayIndex,
+    )
+
+    const clientAppointments = day.appointments.filter(
+      (a) => resolveCategory(a.category) === 'Rendez-vous clients',
+    )
+
+    const r = getPseudoRandom(shiftedDate)
+    const keepCount = Math.max(2, Math.round(clientAppointments.length * (0.5 + r * 0.6)))
+    const kept = clientAppointments.slice(0, keepCount).map((a, i) => ({
+      ...a,
+      id: `${memberId}-${dayIndex}-${i}`,
+      noShow: getPseudoRandom(new Date(shiftedDate.getTime() + i * 999)) < 0.15,
+    }))
+
+    return { date: day.date, appointments: fillWithSuiviLeads(kept, `${memberId}-d${dayIndex}`) }
+  })
+}
+
+function resolveCategory(category?: string): string {
+  return category ?? 'Rendez-vous clients'
+}
+
+function getPseudoRandom(date: Date): number {
+  const seed = date.getFullYear() * 10_000 + (date.getMonth() + 1) * 100 + date.getDate()
+  const value = Math.sin(seed) * 10_000
+  return value - Math.floor(value)
+}

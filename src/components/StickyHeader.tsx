@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Clock } from 'lucide-react'
+import { LayoutDashboard, Clock, Target, ArrowLeft } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import { advisorName, weekSchedule } from '../data/mockData'
 import {
@@ -8,6 +8,7 @@ import {
 } from '../constants/calendarEventStyles'
 import { getEffectiveDurationMinutes, getParisTimeMinutes, getParisToday } from '../utils/calendarMetrics'
 import type { Appointment, AppointmentCategory } from '../types'
+import type { Page } from '../App'
 
 const INDICATOR_STYLES: Record<
   AppointmentCategory,
@@ -107,7 +108,12 @@ function getEventState(): EventState {
   return inProgressState
 }
 
-export function StickyHeader() {
+interface StickyHeaderProps {
+  page: Page
+  setPage: (page: Page) => void
+}
+
+export function StickyHeader({ page, setPage }: StickyHeaderProps) {
   const [, setTick] = useState(0)
 
   useEffect(() => {
@@ -130,16 +136,42 @@ export function StickyHeader() {
       <div className="mx-auto flex w-full max-w-[88rem] items-center justify-between px-6 py-3">
         {/* Page title */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center">
-            <LayoutDashboard size={20} className="text-gray-600" />
-          </div>
-          <h1 className="text-lg font-bold text-gray-900">
-            Dashboard de {advisorName}
-          </h1>
+          {page === 'objectifs' ? (
+            <>
+              <button
+                onClick={() => setPage('dashboard')}
+                className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <ArrowLeft size={20} className="text-gray-600" />
+              </button>
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+                <Target size={20} className="text-gray-600" />
+              </div>
+              <h1 className="text-lg font-bold text-gray-900">
+                Vue équipe et objectifs
+              </h1>
+            </>
+          ) : (
+            <>
+              <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center">
+                <LayoutDashboard size={20} className="text-gray-600" />
+              </div>
+              <h1 className="text-lg font-bold text-gray-900">
+                Dashboard de {advisorName}
+              </h1>
+              <button
+                onClick={() => setPage('objectifs')}
+                className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs font-semibold text-gray-600 cursor-pointer"
+              >
+                <Target size={14} />
+                Objectifs
+              </button>
+            </>
+          )}
         </div>
 
-        {/* Event indicator */}
-        {state && palette ? (
+        {/* Event indicator (dashboard only) */}
+        {page !== 'objectifs' && state && palette ? (
           <div
             className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all duration-500 ${palette.bg} ${palette.border}`}
           >
@@ -168,14 +200,14 @@ export function StickyHeader() {
                 : `dans ${formatMinutesLabel(state.startsInMin)}`}
             </span>
           </div>
-        ) : (
+        ) : page !== 'objectifs' ? (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50/90 border border-gray-200/60">
             <Clock size={14} className="text-gray-400" />
             <span className="text-xs font-medium text-gray-500">
               Journée terminée
             </span>
           </div>
-        )}
+        ) : null}
       </div>
       <div className="h-px bg-gradient-to-r from-transparent via-gray-200/60 to-transparent" />
     </div>
