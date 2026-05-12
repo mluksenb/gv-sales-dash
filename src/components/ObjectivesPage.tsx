@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Save, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Save, Pencil, ArrowUpDown, ArrowUp, ArrowDown, Undo2 } from 'lucide-react'
 import { format, addWeeks, startOfWeek } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { StickyHeader } from './StickyHeader'
@@ -260,21 +260,35 @@ export function ObjectivesPage({ setPage }: ObjectivesPageProps) {
 
       <div className="mx-auto w-full max-w-[88rem] p-6 space-y-6">
         {/* Week selector */}
-        <div className="flex items-center justify-center gap-4">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+          <div />
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => setWeekOffset((o) => o - 1)}
+              className="w-9 h-9 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={18} className="text-gray-600" />
+            </button>
+            <span className="text-sm font-semibold text-gray-800 min-w-[220px] text-center">
+              {weekLabel}
+            </span>
+            <button
+              onClick={() => setWeekOffset((o) => o + 1)}
+              className="w-9 h-9 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <ChevronRight size={18} className="text-gray-600" />
+            </button>
+          </div>
           <button
-            onClick={() => setWeekOffset((o) => o - 1)}
-            className="w-9 h-9 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
+            onClick={() => setWeekOffset(0)}
+            disabled={weekOffset === 0}
+            className="justify-self-end px-3 py-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1.5"
+            style={{ color: TEAL, borderColor: `${TEAL}30` }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = `${TEAL}08` }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
           >
-            <ChevronLeft size={18} className="text-gray-600" />
-          </button>
-          <span className="text-sm font-semibold text-gray-800 min-w-[220px] text-center">
-            {weekLabel}
-          </span>
-          <button
-            onClick={() => setWeekOffset((o) => o + 1)}
-            className="w-9 h-9 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            <ChevronRight size={18} className="text-gray-600" />
+            <Undo2 size={14} />
+            Cette semaine
           </button>
         </div>
 
