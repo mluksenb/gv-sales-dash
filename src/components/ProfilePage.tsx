@@ -1082,7 +1082,11 @@ function KeyDetailsCard({
     <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
       {/* Owner */}
       <div className="flex items-center gap-3 w-full min-w-0">
-        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600 shrink-0">
+        <div
+          className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600 shrink-0"
+          title={ownerValue}
+          aria-label={ownerValue}
+        >
           {getOwnerInitials(ownerValue)}
         </div>
         <div ref={ownerDropdownRef} className="relative flex-1 min-w-0">
@@ -1632,6 +1636,7 @@ function RendezVousTile({ rdv }: { rdv: DealRendezVous }) {
         <div
           className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
           title={rdv.owner}
+          aria-label={rdv.owner}
         >
           {getOwnerInitials(rdv.owner)}
         </div>
@@ -1699,12 +1704,11 @@ const TASK_TYPES: TaskType[] = ['Demande de rappel', 'Rétention livret', 'Drop'
 
 const STATUS_BADGE_STYLES: Record<TaskStatus, string> = {
   'À traiter': 'bg-amber-50 text-amber-700 border-amber-200',
-  'En cours': 'bg-blue-50 text-blue-700 border-blue-200',
   'Terminé': 'bg-emerald-50 text-emerald-700 border-emerald-200',
 }
 
 function getTileStyle(status: TaskStatus): string {
-  if (status === 'Terminé') return 'bg-emerald-50/60 border-emerald-200'
+  if (status === 'Terminé') return 'bg-gray-50/50 border-gray-100'
   return 'bg-amber-50/60 border-amber-200'
 }
 
@@ -1757,7 +1761,7 @@ function TasksCard({ dealId }: { dealId: string }) {
         {/* Filters */}
         <div className="mt-4 flex items-center gap-2 flex-wrap">
           <FilterDropdown
-            label="Toutes"
+            label="Tous les statuts"
             options={STATUS_FILTERS.map((f) => f.label)}
             selected={filterStatus}
             onToggle={(v) => setFilterStatus(toggleFilter(filterStatus, v))}
@@ -1799,28 +1803,34 @@ function TasksCard({ dealId }: { dealId: string }) {
                   key={task.id}
                   className={`group/task relative w-full px-4 py-3 rounded-xl border ${getTileStyle(task.status)}`}
                 >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[13px] font-semibold text-gray-900">{task.type}</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${STATUS_BADGE_STYLES[task.status]}`}>
-                      {task.status === 'Terminé' ? 'Validée' : task.status}
-                    </span>
+                  <span
+                    className={`absolute top-3 right-3 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0 ${STATUS_BADGE_STYLES[task.status]}`}
+                  >
+                    {task.status === 'Terminé' ? 'Validée' : task.status}
+                  </span>
+                  <div className="flex items-start gap-2 mb-2 pr-[5.5rem]">
+                    <span className="text-[13px] font-semibold text-gray-900 min-w-0">{task.type}</span>
                   </div>
-                  <div className="text-[12px] text-gray-500">
-                    Owner : <span className="font-medium text-gray-700">{task.conseiller}</span>
+                  <div className="flex items-center gap-2 min-w-0 pr-[5.5rem]">
+                    <div
+                      className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
+                      title={task.conseiller}
+                      aria-label={task.conseiller}
+                    >
+                      {getOwnerInitials(task.conseiller)}
+                    </div>
+                    {isDone && completedLabel ? (
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="text-[12px] text-gray-400 truncate">Validée le {completedLabel}</span>
+                        <SLAIndicator minutes={task.slaMinutes} size="sm" />
+                      </div>
+                    ) : (
+                      <span className="text-[12px] text-gray-400 truncate">Échéance : {dueLabel}</span>
+                    )}
                   </div>
-                  {isDone && completedLabel ? (
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[12px] text-gray-500">Validée le {completedLabel}</span>
-                      <SLAIndicator minutes={task.slaMinutes} size="sm" />
-                    </div>
-                  ) : (
-                    <div className="text-[12px] text-gray-500 mt-0.5">
-                      Échéance : {dueLabel}
-                    </div>
-                  )}
 
-                  {/* Hover toolbox */}
-                  <div className="absolute top-2.5 right-2.5 inline-flex items-center gap-0.5 bg-gray-100 rounded-lg p-1 opacity-0 group-hover/task:opacity-100 transition-opacity shadow-sm">
+                  {/* Hover toolbox — under status pill, top-right */}
+                  <div className="absolute top-10 right-2.5 z-20 inline-flex items-center gap-0.5 bg-gray-100 rounded-lg p-1 opacity-0 group-hover/task:opacity-100 transition-opacity shadow-sm">
                     {isDone ? (
                       <button
                         title="Rouvrir la tâche"
@@ -2186,6 +2196,7 @@ function DealsTab() {
                       <div
                         className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-semibold text-gray-600 shrink-0"
                         title={deal.owner}
+                        aria-label={deal.owner}
                       >
                         {getOwnerInitials(deal.owner)}
                       </div>

@@ -2,7 +2,7 @@ export type TierLevel = 'Tier 1' | 'Tier 2' | 'Tier 3'
 export type ProspectType = 'Lead' | 'Client'
 export type AppointmentCategory = 'Rendez-vous clients' | 'Care' | 'OOO' | 'Interne' | 'Suivi leads'
 export type TaskType = 'Demande de rappel' | 'Rétention livret' | 'Drop'
-export type TaskStatus = 'À traiter' | 'En cours' | 'Terminé'
+export type TaskStatus = 'À traiter' | 'Terminé'
 export type ProjectType =
   | 'life_insurance'
   | 'life_insurance_kid'
