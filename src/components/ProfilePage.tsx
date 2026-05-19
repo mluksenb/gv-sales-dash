@@ -613,7 +613,7 @@ function StageHistoryLog({ stageHistory, currentEtape }: { stageHistory: DealSta
               Source
             </th>
             <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-              Temps dans l&apos;étape
+              Durée
             </th>
             <th className="pr-3.5 pl-2 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
               Date de modif.
