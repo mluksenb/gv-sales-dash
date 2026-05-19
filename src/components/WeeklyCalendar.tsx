@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar, ChevronDown, ChevronUp, Undo2 } from 'lucide-react'
 import { format, addDays, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { getWeekScheduleForOffset } from '../data/mockData'
@@ -89,6 +89,14 @@ export function WeeklyCalendar() {
               <ChevronRight size={16} className="text-gray-600" />
             </button>
           </div>
+          <button
+            onClick={() => setWeekOffset(0)}
+            disabled={weekOffset === 0}
+            className="ml-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 transition-colors enabled:hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Undo2 size={14} />
+            Cette semaine
+          </button>
         </div>
       </div>
 

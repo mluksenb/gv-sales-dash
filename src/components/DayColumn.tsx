@@ -21,6 +21,7 @@ import {
   getSimulatedTasks,
   getSimulatedCollecte,
   getActiveAppointmentIndex,
+  getParisToday,
 } from '../utils/calendarMetrics'
 
 interface DayColumnProps {
@@ -39,6 +40,8 @@ export function DayColumn({
   isToday,
   collapsed = false,
 }: DayColumnProps) {
+  const today = getParisToday()
+  const isFutureDay = day.date.getTime() > today.getTime()
   const dayName = format(day.date, 'EEE', { locale: fr }).toUpperCase().replace('.', '')
   const dateNum = format(day.date, 'd')
   const month = format(day.date, 'MMM', { locale: fr }).replace('.', '')
@@ -56,12 +59,17 @@ export function DayColumn({
   const expectedCalls = Math.round((leadFollowUpMinutes / 60) * EXPECTED_CALLS_PER_HOUR)
   const simulatedCallCompletionRatio = getSimulatedCallCompletionRatio(day.date)
   const simulatedCalls = Math.round(expectedCalls * simulatedCallCompletionRatio)
-  const callsProgressPercent = expectedCalls > 0 ? (simulatedCalls / expectedCalls) * 100 : 0
+  const displayedCalls = isFutureDay ? 0 : simulatedCalls
+  const callsProgressPercent = expectedCalls > 0 ? (displayedCalls / expectedCalls) * 100 : 0
   const tasks = getSimulatedTasks(day.date)
-  const tasksProgressPercent = tasks.total > 0 ? Math.min((tasks.done / tasks.total) * 100, 100) : 0
-  const tasksUnderSlaPercent = tasks.done > 0 ? Math.min((tasks.doneUnderSla / tasks.done) * 100, 100) : 0
+  const displayedTasksDone = isFutureDay ? 0 : tasks.done
+  const displayedTasksDoneUnderSla = isFutureDay ? 0 : tasks.doneUnderSla
+  const tasksProgressPercent = tasks.total > 0 ? Math.min((displayedTasksDone / tasks.total) * 100, 100) : 0
+  const tasksUnderSlaPercent =
+    displayedTasksDone > 0 ? Math.min((displayedTasksDoneUnderSla / displayedTasksDone) * 100, 100) : 0
   const collecteAmount = getSimulatedCollecte(day.date)
-  const collecteProgressPercent = Math.min((collecteAmount / DAILY_COLLECTE_TARGET) * 100, 100)
+  const displayedCollecteAmount = isFutureDay ? 0 : collecteAmount
+  const collecteProgressPercent = Math.min((displayedCollecteAmount / DAILY_COLLECTE_TARGET) * 100, 100)
 
   const [, setTick] = useState(0)
   useEffect(() => {
@@ -134,7 +142,7 @@ export function DayColumn({
             <span
               className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}
             >
-              {simulatedCalls} / {expectedCalls}
+              {displayedCalls} / {expectedCalls}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1.5">
@@ -167,7 +175,7 @@ export function DayColumn({
             <span
               className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-gray-700`}
             >
-              {tasks.done} / {tasks.total}
+              {displayedTasksDone} / {tasks.total}
             </span>
           </div>
           <div className="flex items-center gap-2 mt-1.5">
@@ -214,7 +222,7 @@ export function DayColumn({
               <span
                 className={`${METRIC_VALUE_WIDTH_CLASS} text-[11px] font-semibold leading-none text-right whitespace-nowrap text-[#2c4338]`}
               >
-                {formatK(collecteAmount)} / {formatKEuros(DAILY_COLLECTE_TARGET)}
+                {formatK(displayedCollecteAmount)} / {formatKEuros(DAILY_COLLECTE_TARGET)}
               </span>
             </div>
           </div>

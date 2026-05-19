@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Dashboard } from './components/Dashboard'
 import { ObjectivesPage } from './components/ObjectivesPage'
+import { ProfilePage } from './components/ProfilePage'
 
-export type Page = 'dashboard' | 'objectifs'
+export type Page = 'dashboard' | 'objectifs' | 'profile'
 
 const PAGE_PATHS: Record<Page, string> = {
   dashboard: '/',
   objectifs: '/objectifs',
+  profile: '/profile',
 }
 
 function resolvePageFromPath(pathname: string): Page {
   const normalizedPath = pathname.replace(/\/+$/, '') || '/'
-  return normalizedPath === PAGE_PATHS.objectifs ? 'objectifs' : 'dashboard'
+  if (normalizedPath === PAGE_PATHS.objectifs) return 'objectifs'
+  if (normalizedPath === PAGE_PATHS.profile) return 'profile'
+  return 'dashboard'
 }
 
 function App() {
@@ -35,9 +39,9 @@ function App() {
     }
   }
 
-  return page === 'objectifs'
-    ? <ObjectivesPage setPage={navigateToPage} />
-    : <Dashboard page={page} setPage={navigateToPage} />
+  if (page === 'objectifs') return <ObjectivesPage setPage={navigateToPage} />
+  if (page === 'profile') return <ProfilePage setPage={navigateToPage} />
+  return <Dashboard page={page} setPage={navigateToPage} />
 }
 
 export default App

@@ -4,13 +4,14 @@ import { fr } from 'date-fns/locale'
 import type { Task } from '../types'
 import { TaskTypeBadge, ProspectBadge, TierBadge } from './Badge'
 import { SLAIndicator } from './SLAIndicator'
-import { PROJECT_STATUS_FR } from '../lib/projectLabels'
+import { RelationTile } from './RelationTile'
 import { getParisToday } from '../utils/calendarMetrics'
 
 interface TaskRowProps {
   task: Task
   isEven: boolean
   showTypeColumn: boolean
+  onDealClick?: (dealId: string) => void
 }
 
 function formatProspectPhone(phone: string): string {
@@ -25,28 +26,23 @@ function formatProspectPhone(phone: string): string {
   return `+33 ${firstDigit} ${part1} ${part2} ${part3} ${part4}`
 }
 
-export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
+export function TaskRow({ task, isEven, showTypeColumn, onDealClick }: TaskRowProps) {
   const parsedDueDate = parse(task.createdAt, 'dd/MM HH:mm', getParisToday())
   const dueDateLabel = isValid(parsedDueDate)
     ? format(parsedDueDate, 'eee d MMM HH:mm', { locale: fr })
     : task.createdAt
   const telHref = `tel:${task.prospectPhone.replace(/\s+/g, '')}`
   const formattedPhone = formatProspectPhone(task.prospectPhone)
-  const amountFormatted = new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-  }).format(task.projectAmount)
 
   return (
     <tr className={`group hover:bg-amber-100/60 transition-colors border-b border-gray-100 last:border-0 ${isEven ? 'bg-white' : 'bg-[#fdfcfa]'}`}>
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      <td className="px-2 py-2 whitespace-nowrap">
         <div className="flex items-center gap-2">
           <span className="text-[12px] text-gray-900 font-medium">{dueDateLabel}</span>
           <SLAIndicator minutes={task.slaMinutes} />
         </div>
       </td>
-      <td className="px-3 py-2.5">
+      <td className="px-2 py-2">
         <div>
           <span className="text-[12px] text-gray-900 font-medium">{task.prospectName}</span>
           <div className="flex items-center gap-1.5 mt-1">
@@ -55,7 +51,18 @@ export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
           </div>
         </div>
       </td>
-      <td className="px-3 py-2.5 whitespace-nowrap">
+      {showTypeColumn && (
+        <td className="px-2 py-2">
+          <TaskTypeBadge type={task.type} />
+        </td>
+      )}
+      <td className="px-1.5 py-2">
+        <RelationTile
+          relation={task.relation}
+          onDealClick={task.type === 'Rétention livret' ? undefined : onDealClick}
+        />
+      </td>
+      <td className="px-2 py-2 whitespace-nowrap">
         <a
           href={telHref}
           className="text-[12px] font-medium text-[#1a3a3a] hover:underline"
@@ -63,20 +70,7 @@ export function TaskRow({ task, isEven, showTypeColumn }: TaskRowProps) {
           {formattedPhone}
         </a>
       </td>
-      {showTypeColumn && (
-        <td className="px-3 py-2.5">
-          <TaskTypeBadge type={task.type} />
-        </td>
-      )}
-      <td className="pl-1 pr-1 py-2.5">
-        <div>
-          <span className="text-[12px] text-gray-900">{task.projectName}</span>
-          <div className="text-[11px] text-gray-500">
-            {amountFormatted} · {PROJECT_STATUS_FR[task.projectStatus]}
-          </div>
-        </div>
-      </td>
-      <td className="px-3 py-2.5">
+      <td className="px-2 py-2">
         <div className="inline-flex items-center gap-0.5 bg-gray-100 rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
           <button
             title="Marquer traité"

@@ -18,6 +18,7 @@ import {
   getSimulatedCallCompletionRatio,
   getSimulatedTasks,
   getSimulatedCollecte,
+  getParisToday,
 } from '../utils/calendarMetrics'
 
 interface WeeklySummaryProps {
@@ -29,6 +30,7 @@ const METRIC_VALUE_WIDTH_CLASS = 'w-[66px]'
 const WEEKLY_CATEGORY_ORDER = ['Rendez-vous clients', 'Suivi leads', 'Care', 'Interne', 'OOO'] as const
 
 export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
+  const today = getParisToday()
   const categoryMinutes = new Map(EVENT_FILTERS.map((category) => [category, 0]))
   let totalClientMeetingCount = 0
   let totalMeetingCount = 0
@@ -60,16 +62,18 @@ export function WeeklySummary({ weekSchedule }: WeeklySummaryProps) {
     totalLeadMinutes += leadMinutes
 
     const expectedCalls = Math.round((leadMinutes / 60) * EXPECTED_CALLS_PER_HOUR)
-    const ratio = getSimulatedCallCompletionRatio(day.date)
-    totalCallsDone += Math.round(expectedCalls * ratio)
-    totalCallsExpected += expectedCalls
+    if (day.date <= today) {
+      const ratio = getSimulatedCallCompletionRatio(day.date)
+      totalCallsDone += Math.round(expectedCalls * ratio)
+      totalCallsExpected += expectedCalls
 
-    const tasks = getSimulatedTasks(day.date)
-    totalTasksDone += tasks.done
-    totalTasksTotal += tasks.total
-    totalTasksDoneUnderSla += tasks.doneUnderSla
+      const tasks = getSimulatedTasks(day.date)
+      totalTasksDone += tasks.done
+      totalTasksTotal += tasks.total
+      totalTasksDoneUnderSla += tasks.doneUnderSla
 
-    totalCollecte += getSimulatedCollecte(day.date)
+      totalCollecte += getSimulatedCollecte(day.date)
+    }
   }
 
   const meetingPercent = appointmentProgressPercent(totalMeetingCount, WEEKLY_APPOINTMENT_TARGET)

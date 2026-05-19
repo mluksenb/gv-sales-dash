@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LayoutDashboard, Clock, Target, ArrowLeft } from 'lucide-react'
+import { LayoutDashboard, Moon, Target, ArrowLeft } from 'lucide-react'
 import { isSameDay } from 'date-fns'
 import { advisorName, weekSchedule } from '../data/mockData'
 import {
@@ -202,7 +202,7 @@ export function StickyHeader({ page, setPage }: StickyHeaderProps) {
           </div>
         ) : page !== 'objectifs' ? (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50/90 border border-gray-200/60">
-            <Clock size={14} className="text-gray-400" />
+            <Moon size={14} className="text-gray-400" />
             <span className="text-xs font-medium text-gray-500">
               Journée terminée
             </span>

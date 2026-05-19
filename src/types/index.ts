@@ -28,19 +28,139 @@ export interface DaySchedule {
   appointments: Appointment[]
 }
 
-export interface Task {
+export type TaskProjectRelation = {
+  kind: 'project'
+  projectName: string
+  projectType: ProjectType
+  projectAmount: number
+  projectStatus: ProjectStatus
+}
+
+export type TaskDealRelation = {
+  kind: 'deal'
+  dealId: string
+  dealAmount: number
+  dealEtape: DealEtape
+  projectCount: number
+  /** Set when the deal has a single linked project */
+  singleProjectName?: string
+  /** Used for product filters when inferable from the deal */
+  projectType?: ProjectType
+}
+
+export type TaskRelation = TaskProjectRelation | TaskDealRelation
+
+interface TaskBase {
   id: string
   createdAt: string
-  type: TaskType
   conseiller: string
   tier: TierLevel
   prospectType: ProspectType
   prospectName: string
   prospectPhone: string
-  projectName: string
-  projectType: ProjectType
-  projectAmount: number
-  projectStatus: ProjectStatus
   status: TaskStatus
   slaMinutes: number
+  dealId?: string
+  completedAt?: string
+}
+
+/** Rétention livret tasks are always linked to a project; other types are always linked to a deal. */
+export type Task =
+  | (TaskBase & { type: 'Rétention livret'; relation: TaskProjectRelation })
+  | (TaskBase & { type: 'Demande de rappel'; relation: TaskDealRelation })
+  | (TaskBase & { type: 'Drop'; relation: TaskDealRelation })
+
+export type DealType = 'New Biz' | 'Cross-Sell' | 'Upsell'
+export type DealSource = 'Direct' | 'Paid Search' | 'Organic Search' | 'AI Referral'
+export type DealEtape = 'Nouvelle' | 'Contacté / RDV pris' | 'Qualifié' | 'Signé / Souscrit' | 'Gagnée' | 'Perdue'
+
+export interface DealProjet {
+  projetId: string
+  projetName: string
+  provider: string
+  status: 'Ouvert' | 'Clôturé'
+  creationDate: string
+}
+
+export interface DealStageEntry {
+  etape: DealEtape
+  enteredAt: string
+}
+
+export interface DealAmountEntry {
+  montant: number
+  changedAt: string
+}
+
+export interface DealUtm {
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+  utmContent: string | null
+}
+
+export interface Deal {
+  id: string
+  dealId: string
+  creation: string
+  type: DealType
+  source: DealSource
+  owner: string
+  montant: number
+  etape: DealEtape
+  projets: DealProjet[]
+  closedDate: string | null
+  lastReachedEtape: string | null
+  stageHistory: DealStageEntry[]
+  amountHistory: DealAmountEntry[]
+  utm: DealUtm
+}
+
+export type ContractStatus = 'Ouvert' | 'Clôturé'
+
+export interface ClientProject {
+  id: string
+  productName: string
+  provider: string
+  status: ContractStatus
+  assure: string
+  contrat: string
+  reference: string
+  soldeActuel: number
+  gain: number
+  vlp: number | null
+  souscriptionDate: string
+}
+
+export interface ClientProfile {
+  id: string
+  civilite: string
+  prenom: string
+  nom: string
+  tier: TierLevel
+  prospectType: ProspectType
+  email: string
+  phone: string
+  dateNaissance: string
+  villeNaissance: string
+  departement: string
+  paysNaissance: string
+  adresse: string
+  ville: string
+  codePostal: string
+  pays: string
+  situationPro: string
+  profession: string
+  csp: string
+  salaireAnnuel: string
+  entreprise: string | null
+  conseillerName: string
+  conseillerSince: string
+  encoursTotal: number
+  plusValuesCumulees: number
+  versementsMensuels: number
+  contratsOuverts: number
+  derniereConnexion: string
+  projects: ClientProject[]
+  deals: Deal[]
 }

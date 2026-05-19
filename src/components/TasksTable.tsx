@@ -1,8 +1,10 @@
 import { ClipboardList, Filter, ArrowUpDown, Check } from 'lucide-react'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { tasks } from '../data/mockData'
+import { clientProfile, tasks } from '../data/mockData'
+import { DealDetailsSidebar } from './ProfilePage'
 import { TaskRow } from './TaskRow'
-import type { TaskType, ProjectType } from '../types'
+import { getTaskFilterProjectType, getTaskSortAmount } from '../lib/taskRelation'
+import type { Deal, TaskType, ProjectType } from '../types'
 
 const TASK_TYPES: TaskType[] = ['Demande de rappel', 'Drop', 'Rétention livret']
 
@@ -44,6 +46,12 @@ export function TasksTable() {
   const [sortBy, setSortBy] = useState<SortOption>('default')
   const [filterOpen, setFilterOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
+
+  const handleDealClick = (dealMemberId: string) => {
+    const deal = clientProfile.deals.find((d) => d.dealId === dealMemberId)
+    if (deal) setSelectedDeal(deal)
+  }
 
   const filterRef = useRef<HTMLDivElement>(null)
   const sortRef = useRef<HTMLDivElement>(null)
@@ -52,7 +60,9 @@ export function TasksTable() {
   useClickOutside(sortRef, () => setSortOpen(false))
 
   const availableProducts = useMemo(() => {
-    const types = new Set(tasks.map(t => t.projectType))
+    const types = new Set(
+      tasks.map(getTaskFilterProjectType).filter((t): t is ProjectType => t != null),
+    )
     return Array.from(types).sort()
   }, [])
 
@@ -67,12 +77,15 @@ export function TasksTable() {
   const filteredTasks = useMemo(() => {
     let result = activeTab === 'all' ? tasks : tasks.filter(t => t.type === activeTab)
     if (selectedProducts.size > 0) {
-      result = result.filter(t => selectedProducts.has(t.projectType))
+      result = result.filter((t) => {
+        const projectType = getTaskFilterProjectType(t)
+        return projectType != null && selectedProducts.has(projectType)
+      })
     }
     if (sortBy === 'most_late') {
       result = [...result].sort((a, b) => a.slaMinutes - b.slaMinutes)
     } else if (sortBy === 'biggest_amount') {
-      result = [...result].sort((a, b) => b.projectAmount - a.projectAmount)
+      result = [...result].sort((a, b) => getTaskSortAmount(b) - getTaskSortAmount(a))
     }
     return result
   }, [activeTab, selectedProducts, sortBy])
@@ -209,34 +222,44 @@ export function TasksTable() {
         <table className="w-full">
           <thead className="sticky top-[65px] z-20">
             <tr className="bg-gray-900 text-white">
-              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+              <th className="bg-gray-900 px-2 py-2 text-left text-[11px] font-semibold tracking-wide">
                 Échéance
               </th>
-              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+              <th className="bg-gray-900 px-2 py-2 text-left text-[11px] font-semibold tracking-wide">
                 Prospect
               </th>
-              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap">
-                Téléphone
-              </th>
               {showTypeColumn && (
-                <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide">
+                <th className="bg-gray-900 px-2 py-2 text-left text-[11px] font-semibold tracking-wide">
                   Type
                 </th>
               )}
-              <th className="bg-gray-900 pl-1 pr-1 py-2.5 text-left text-[11px] font-semibold tracking-wide">
-                Projet
+              <th className="bg-gray-900 px-1.5 py-2 text-left text-[11px] font-semibold tracking-wide">
+                Relation
               </th>
-              <th className="bg-gray-900 px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide w-[100px]">
+              <th className="bg-gray-900 px-2 py-2 text-left text-[11px] font-semibold tracking-wide whitespace-nowrap">
+                Téléphone
+              </th>
+              <th className="bg-gray-900 px-2 py-2 text-left text-[11px] font-semibold tracking-wide w-[100px]">
               </th>
             </tr>
           </thead>
           <tbody>
             {filteredTasks.map((task, index) => (
-              <TaskRow key={task.id} task={task} isEven={index % 2 === 0} showTypeColumn={showTypeColumn} />
+              <TaskRow
+                key={task.id}
+                task={task}
+                isEven={index % 2 === 0}
+                showTypeColumn={showTypeColumn}
+                onDealClick={handleDealClick}
+              />
             ))}
           </tbody>
         </table>
       </div>
+
+      {selectedDeal && (
+        <DealDetailsSidebar deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
+      )}
     </div>
   )
 }
