@@ -99,6 +99,8 @@ export interface DealUtm {
   utmContent: string | null
 }
 
+export type DealPriority = 'normal' | 'medium' | 'high'
+
 export interface Deal {
   id: string
   dealId: string
@@ -106,6 +108,7 @@ export interface Deal {
   type: DealType
   source: DealSource
   owner: string
+  priority: DealPriority
   montant: number
   etape: DealEtape
   projets: DealProjet[]

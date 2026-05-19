@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw } from 'lucide-react'
+import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parse, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { clientProfile, tasks as allTasks } from '../data/mockData'
 import type { Page } from '../App'
-import type { ClientProject, Deal, DealProjet, DealStageEntry, TaskStatus, TaskType } from '../types'
+import type { ClientProject, Deal, DealPriority, DealProjet, DealStageEntry, TaskStatus, TaskType } from '../types'
 import { SLAIndicator } from './SLAIndicator'
 import { getParisToday } from '../utils/calendarMetrics'
 import {
@@ -282,7 +282,26 @@ function StageBadge({ etape, size = 'md', showIcon = true }: { etape: string; si
 }
 
 type SortDir = 'asc' | 'desc'
-type SortKey = 'creation' | 'dealId' | 'type' | 'source' | 'owner' | 'montant' | 'etape' | 'closedDate' | 'projetName'
+type SortKey = 'creation' | 'dealId' | 'type' | 'source' | 'owner' | 'priority' | 'montant' | 'etape' | 'closedDate' | 'projetName'
+
+const PRIORITY_SORT_ORDER: Record<DealPriority, number> = { normal: 0, medium: 1, high: 2 }
+
+function getOwnerInitials(name: string): string {
+  return name.split(' ').map((w) => w[0]).join('').slice(0, 2)
+}
+
+function DealPriorityFlames({ priority, size = 14 }: { priority: DealPriority; size?: number }) {
+  if (priority === 'normal') return null
+  if (priority === 'medium') {
+    return <Flame size={size} className="text-orange-500 fill-orange-500 shrink-0" aria-hidden />
+  }
+  return (
+    <span className="inline-flex items-center -space-x-0.5" aria-hidden>
+      <Flame size={size} className="text-red-500 fill-red-500 shrink-0" />
+      <Flame size={size} className="text-red-500 fill-red-500 shrink-0" />
+    </span>
+  )
+}
 
 const DEAL_TYPE_STYLES: Record<string, string> = {
   'New Biz': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -305,6 +324,8 @@ function compareDeal(a: Deal, b: Deal, key: SortKey, dir: SortDir): number {
     const av = a.projets[0]?.projetName || ''
     const bv = b.projets[0]?.projetName || ''
     cmp = av.localeCompare(bv, 'fr')
+  } else if (key === 'priority') {
+    cmp = PRIORITY_SORT_ORDER[a.priority] - PRIORITY_SORT_ORDER[b.priority]
   } else {
     const av = a[key] as string
     const bv = b[key] as string
@@ -640,20 +661,38 @@ function SourceCard({ source, utm }: { source: string; utm: { utmSource: string 
 
 const OWNER_OPTIONS = ['Hildegarde Champey', 'Étienne Moreau', 'Sophie Laurent', 'Marc Dupont', 'Julie Fontaine']
 
+const PRIORITY_LABELS: Record<DealPriority, string> = {
+  normal: 'Normal',
+  medium: 'Élevé',
+  high: 'Maximum',
+}
+
+const PRIORITY_OPTIONS: { value: DealPriority; label: string }[] = [
+  { value: 'normal', label: PRIORITY_LABELS.normal },
+  { value: 'medium', label: PRIORITY_LABELS.medium },
+  { value: 'high', label: PRIORITY_LABELS.high },
+]
+
 function formatDateToFrench(isoDate: string): string {
   const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
   const [year, month, day] = isoDate.split('-').map(Number)
   return `${day} ${MONTHS[month - 1]} ${year}`
 }
 
-function KeyDetailsCard({ owner, closedDate, isWon, isLost }: { owner: string; closedDate: string | null; isWon: boolean; isLost: boolean }) {
-  const [editingField, setEditingField] = useState<'owner' | 'closeDate' | null>(null)
+function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner: string; priority: DealPriority; closedDate: string | null; isWon: boolean; isLost: boolean }) {
+  const [editingField, setEditingField] = useState<'owner' | 'priority' | 'closeDate' | null>(null)
   const [ownerValue, setOwnerValue] = useState(owner)
+  const [priorityValue, setPriorityValue] = useState(priority)
   const [closeDateValue, setCloseDateValue] = useState(closedDate || '')
   const [ownerSearch, setOwnerSearch] = useState('')
   const ownerDropdownRef = useRef<HTMLDivElement>(null)
+  const priorityDropdownRef = useRef<HTMLDivElement>(null)
   const ownerSearchRef = useRef<HTMLInputElement>(null)
   const dateInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setPriorityValue(priority)
+  }, [priority])
 
   useEffect(() => {
     if (editingField === 'owner') ownerSearchRef.current?.focus()
@@ -664,11 +703,15 @@ function KeyDetailsCard({ owner, closedDate, isWon, isLost }: { owner: string; c
   }, [editingField])
 
   useEffect(() => {
-    if (editingField !== 'owner') return
+    if (editingField !== 'owner' && editingField !== 'priority') return
     const handleClickOutside = (e: MouseEvent) => {
-      if (ownerDropdownRef.current && !ownerDropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (editingField === 'owner' && ownerDropdownRef.current && !ownerDropdownRef.current.contains(target)) {
         setEditingField(null)
         setOwnerSearch('')
+      }
+      if (editingField === 'priority' && priorityDropdownRef.current && !priorityDropdownRef.current.contains(target)) {
+        setEditingField(null)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -685,6 +728,11 @@ function KeyDetailsCard({ owner, closedDate, isWon, isLost }: { owner: string; c
     setOwnerSearch('')
   }
 
+  const handlePrioritySelect = (value: DealPriority) => {
+    setPriorityValue(value)
+    setEditingField(null)
+  }
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isoDate = e.target.value
     if (isoDate) {
@@ -699,7 +747,7 @@ function KeyDetailsCard({ owner, closedDate, isWon, isLost }: { owner: string; c
       <div className="flex items-center justify-between group">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600">
-            {ownerValue.split(' ').map((w) => w[0]).join('').slice(0, 2)}
+            {getOwnerInitials(ownerValue)}
           </div>
           <div className="relative">
             <div className="text-[12px] text-gray-400">Owner</div>
@@ -730,7 +778,7 @@ function KeyDetailsCard({ owner, closedDate, isWon, isLost }: { owner: string; c
                       >
                         <div className="flex items-center gap-2.5">
                           <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0">
-                            {name.split(' ').map((w) => w[0]).join('').slice(0, 2)}
+                            {getOwnerInitials(name)}
                           </div>
                           {name}
                         </div>
@@ -754,9 +802,53 @@ function KeyDetailsCard({ owner, closedDate, isWon, isLost }: { owner: string; c
         )}
       </div>
 
+
+      <div className="border-t border-gray-100" />
+
+      {/* Priority */}
+      <div className="flex items-center justify-between group">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
+            <Flame size={15} className="text-gray-400" />
+          </div>
+          <div className="relative">
+            <div className="text-[12px] text-gray-400">Niveau de priorité</div>
+            {editingField === 'priority' ? (
+              <div ref={priorityDropdownRef} className="absolute top-full left-0 mt-1 z-20 w-52 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden py-1">
+                {PRIORITY_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handlePrioritySelect(option.value)}
+                    className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between ${
+                      option.value === priorityValue ? 'font-semibold text-emerald-700' : 'text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                    {option.value === priorityValue && <Check size={14} className="text-emerald-600 shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <div className="text-[14px] font-medium text-gray-900 min-h-[20px] flex items-center">
+              {PRIORITY_LABELS[priorityValue]}
+            </div>
+          </div>
+        </div>
+        {editingField !== 'priority' && (
+          <button
+            onClick={() => setEditingField('priority')}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all"
+          >
+            <PenLine size={13} />
+          </button>
+        )}
+      </div>
+
       <div className="border-t border-gray-100" />
 
       {/* Close date */}
+
       <div className="flex items-center justify-between group">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
@@ -1147,6 +1239,7 @@ export function DealDetailsSidebar({ deal, onClose }: { deal: Deal; onClose: () 
           {/* Key details card */}
           <KeyDetailsCard
             owner={deal.owner}
+            priority={deal.priority}
             closedDate={deal.closedDate}
             isWon={isWon}
             isLost={isLost}
@@ -1226,6 +1319,7 @@ function DealsTab() {
               <SortHeader label="Création" sortKey="creation" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Type" sortKey="type" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Projet" sortKey="projetName" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+              <SortHeader label="Prio" sortKey="priority" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Montant" sortKey="montant" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} alignRight />
               <SortHeader label="Étape" sortKey="etape" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <th className="px-5 py-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Statut</th>
@@ -1237,7 +1331,7 @@ function DealsTab() {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-5 py-8 text-center text-[13px] text-gray-400">Aucun deal ne correspond aux filtres sélectionnés</td>
+                <td colSpan={10} className="px-5 py-8 text-center text-[13px] text-gray-400">Aucun deal ne correspond aux filtres sélectionnés</td>
               </tr>
             ) : (
               filtered.map((deal, i) => {
@@ -1261,6 +1355,9 @@ function DealsTab() {
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <ProjetCell projets={deal.projets} />
                     </td>
+                    <td className="px-5 py-3.5">
+                      <DealPriorityFlames priority={deal.priority} size={14} />
+                    </td>
                     <td className={`px-5 py-3.5 text-[13px] font-semibold text-right whitespace-nowrap ${deal.etape === 'Perdue' ? 'text-gray-400' : 'text-gray-900'}`}>{formatCurrencyInt(deal.montant)}</td>
                     <td className="px-5 py-3.5">
                       <StageProgressBar currentEtape={deal.etape} lastReachedEtape={deal.lastReachedEtape} />
@@ -1271,11 +1368,11 @@ function DealsTab() {
                     <td className="px-5 py-3.5 text-[13px] text-gray-500 whitespace-nowrap">{deal.closedDate || '–'}</td>
                     <td className="px-5 py-3.5 text-[13px] text-gray-700">{deal.source}</td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-semibold text-gray-600 shrink-0">
-                          {deal.owner.split(' ').map((w) => w[0]).join('').slice(0, 2)}
-                        </div>
-                        <span className="text-[13px] text-gray-700">{deal.owner.split(' ')[0]}</span>
+                      <div
+                        className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] font-semibold text-gray-600 shrink-0"
+                        title={deal.owner}
+                      >
+                        {getOwnerInitials(deal.owner)}
                       </div>
                     </td>
                   </tr>
