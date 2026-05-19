@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parse, isValid } from 'date-fns'
@@ -1720,17 +1721,18 @@ export function DealDetailsSidebar({
   const isLost = deal.etape === 'Perdue'
   const canModifyProjets = !isWon && !isLost
 
-  return (
+  return createPortal(
     <>
-      {/* Backdrop */}
+      {/* Backdrop — portaled to body so fixed positioning isn’t clipped by profile layout */}
       <div
-        className={`fixed inset-0 bg-black/10 z-40 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        className={`fixed inset-0 min-h-dvh w-full bg-black/10 z-[100] transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleClose}
+        aria-hidden
       />
 
       {/* Sidebar panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-[33.333vw] min-w-[420px] max-w-[640px] bg-white border-l border-gray-200 shadow-2xl z-50 flex flex-col transition-transform duration-200 ease-out ${
+        className={`fixed top-0 right-0 h-dvh min-h-dvh w-[33.333vw] min-w-[420px] max-w-[640px] bg-white border-l border-gray-200 shadow-2xl z-[110] flex flex-col transition-transform duration-200 ease-out ${
           visible ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -1838,7 +1840,8 @@ export function DealDetailsSidebar({
         </div>
 
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 
