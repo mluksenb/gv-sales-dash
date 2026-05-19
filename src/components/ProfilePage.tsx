@@ -504,22 +504,59 @@ function ProjetCell({ projets }: { projets: DealProjet[] }) {
 
 function parseFrenchDate(s: string): Date {
   const MONTHS: Record<string, number> = {
-    'jan.': 0, 'fév.': 1, 'mars': 2, 'avr.': 3, 'mai': 4, 'juin': 5,
-    'juil.': 6, 'août': 7, 'sep.': 8, 'oct.': 9, 'nov.': 10, 'déc.': 11,
+    'jan.': 0,
+    'fév.': 1,
+    'mars': 2,
+    'avr.': 3,
+    'mai': 4,
+    'juin': 5,
+    'juil.': 6,
+    'août': 7,
+    'sep.': 8,
+    'sept.': 8,
+    'oct.': 9,
+    'nov.': 10,
+    'déc.': 11,
   }
   const m = s.match(/^(\d{1,2})\s+(\S+)\s+(\d{4})(?:,\s*(\d{2}):(\d{2}))?$/)
-  if (!m) return new Date(0)
-  const day = parseInt(m[1])
+  if (!m) return new Date(NaN)
+  const day = parseInt(m[1], 10)
   const month = MONTHS[m[2]] ?? 0
-  const year = parseInt(m[3])
-  const hour = m[4] ? parseInt(m[4]) : 0
-  const min = m[5] ? parseInt(m[5]) : 0
+  const year = parseInt(m[3], 10)
+  const hour = m[4] ? parseInt(m[4], 10) : 0
+  const min = m[5] ? parseInt(m[5], 10) : 0
   return new Date(year, month, day, hour, min)
 }
 
+/** Parses stage/amount history timestamps: compact `DD/MM/YY HH:mm` (or `DD/MM/YYYY`) or legacy French strings. */
+function parseDealHistoryInstant(s: string): Date {
+  const compact = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/)
+  if (compact) {
+    const day = parseInt(compact[1], 10)
+    const month = parseInt(compact[2], 10) - 1
+    const yStr = compact[3]
+    const year = yStr.length === 2 ? 2000 + parseInt(yStr, 10) : parseInt(yStr, 10)
+    const hour = compact[4] ? parseInt(compact[4], 10) : 0
+    const min = compact[5] ? parseInt(compact[5], 10) : 0
+    return new Date(year, month, day, hour, min)
+  }
+  return parseFrenchDate(s)
+}
+
+function formatDealHistoryTimestampDisplay(raw: string): string {
+  const d = parseDealHistoryInstant(raw)
+  if (!Number.isFinite(d.getTime())) return raw
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const yy = String(d.getFullYear()).slice(-2)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mins = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}/${mm}/${yy} ${hh}:${mins}`
+}
+
 function formatDuration(fromStr: string, toStr: string | null): string {
-  const from = parseFrenchDate(fromStr)
-  const to = toStr ? parseFrenchDate(toStr) : new Date()
+  const from = parseDealHistoryInstant(fromStr)
+  const to = toStr ? parseDealHistoryInstant(toStr) : new Date()
   const diffMs = Math.max(0, to.getTime() - from.getTime())
   const totalMinutes = Math.floor(diffMs / 60_000)
   const totalHours = Math.floor(totalMinutes / 60)
@@ -614,7 +651,7 @@ function StageHistoryLog({ stageHistory, currentEtape }: { stageHistory: DealSta
                 <td
                   className={`pr-3.5 pl-2 py-2.5 text-right text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-700 font-medium' : 'text-gray-400'}`}
                 >
-                  {entry.enteredAt}
+                  {formatDealHistoryTimestampDisplay(entry.enteredAt)}
                 </td>
               </tr>
             )
@@ -764,6 +801,14 @@ function StageCard({
   const sinceInCurrentStage = currentStageStartEntry
     ? formatDuration(currentStageStartEntry.enteredAt, null)
     : ''
+
+  useEffect(() => {
+    if (!onStageChange) {
+      setEditing(false)
+      setLossModalOpen(false)
+      setPendingStageChange(null)
+    }
+  }, [onStageChange])
 
   useEffect(() => {
     if (!editing) return
@@ -1777,11 +1822,22 @@ export function DealDetailsSidebar({
             <div className={`overflow-hidden transition-all duration-200 ease-out ${amountExpanded ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'}`}>
               <div className="mt-2 rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
                 <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="pl-3.5 pr-2 py-2 w-0" aria-hidden />
+                      <th className="pr-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                        Montant
+                      </th>
+                      <th className="pr-3.5 pl-2 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                        Date de modif.
+                      </th>
+                    </tr>
+                  </thead>
                   <tbody>
                     {deal.amountHistory.map((entry, i) => {
                       const isCurrent = i === deal.amountHistory.length - 1
                       return (
-                        <tr key={i} className={isCurrent ? 'bg-white' : ''}>
+                        <tr key={i}>
                           <td className="pl-3.5 pr-2 py-2.5 w-0">
                             <div className="flex items-center justify-center w-3">
                               {isCurrent && (
@@ -1793,7 +1849,7 @@ export function DealDetailsSidebar({
                             {formatCurrencyInt(entry.montant)}
                           </td>
                           <td className={`pr-3.5 pl-2 py-2.5 text-right text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
-                            {entry.changedAt}
+                            {formatDealHistoryTimestampDisplay(entry.changedAt)}
                           </td>
                         </tr>
                       )
@@ -1813,7 +1869,7 @@ export function DealDetailsSidebar({
           <StageCard
             etape={deal.etape}
             stageHistory={deal.stageHistory}
-            onStageChange={onStageChange}
+            onStageChange={canModifyProjets ? onStageChange : undefined}
           />
 
           {/* Key details card */}

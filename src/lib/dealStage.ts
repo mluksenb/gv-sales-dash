@@ -18,7 +18,7 @@ export function formatTodayFrench(date = new Date()): string {
 }
 
 export function formatStageTimestamp(date = new Date()): string {
-  return format(date, 'd MMM yyyy, HH:mm', { locale: fr })
+  return format(date, 'dd/MM/yy HH:mm')
 }
 
 function resolveLastReachedBeforeLoss(deal: Deal): DealEtape {
