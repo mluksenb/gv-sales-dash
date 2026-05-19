@@ -107,6 +107,20 @@ export interface DealUtm {
 
 export type DealPriority = 'normal' | 'medium' | 'high'
 
+export type DealRendezVousStatus = 'À venir' | 'Annulé' | 'Réalisé' | 'No-show'
+
+/** Scheduled meeting linked to a deal (sidebar « Rendez-vous »). */
+export interface DealRendezVous {
+  id: string
+  title: string
+  /** ISO 8601 datetime string for the meeting start. */
+  startsAt: string
+  durationMinutes: number
+  /** Advisor who owns / ran the meeting (initials like the deals table). */
+  owner: string
+  status: DealRendezVousStatus
+}
+
 export interface Deal {
   id: string
   dealId: string
@@ -118,6 +132,8 @@ export interface Deal {
   montant: number
   etape: DealEtape
   projets: DealProjet[]
+  /** Optional — absent in older persisted deals. */
+  rendezVous?: DealRendezVous[]
   closedDate: string | null
   lastReachedEtape: string | null
   stageHistory: DealStageEntry[]

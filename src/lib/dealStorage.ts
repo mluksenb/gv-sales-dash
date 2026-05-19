@@ -8,7 +8,15 @@ export function loadDeals(fallback: Deal[]): Deal[] {
     if (!raw) return fallback
     const parsed = JSON.parse(raw) as Deal[]
     if (!Array.isArray(parsed) || parsed.length === 0) return fallback
-    return parsed
+
+    const fallbackById = new Map(fallback.map((d) => [d.id, d]))
+    return parsed.map((stored) => {
+      const fb = fallbackById.get(stored.id)
+      if (!fb) return stored
+      // Anciennes persistance sans ce champ : reprendre les rendez-vous des mocks
+      if (Array.isArray(stored.rendezVous)) return stored
+      return { ...stored, rendezVous: fb.rendezVous ?? [] }
+    })
   } catch {
     return fallback
   }

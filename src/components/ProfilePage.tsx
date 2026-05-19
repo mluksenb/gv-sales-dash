@@ -2,11 +2,24 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { format, parse, isValid } from 'date-fns'
+import { format, parse, parseISO, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { clientProfile, tasks as allTasks } from '../data/mockData'
 import type { Page } from '../App'
-import type { ClientProject, Deal, DealEtape, DealLossReason, DealPriority, DealProjet, DealStageEntry, DealUtm, TaskStatus, TaskType } from '../types'
+import type {
+  ClientProject,
+  Deal,
+  DealEtape,
+  DealLossReason,
+  DealPriority,
+  DealProjet,
+  DealRendezVous,
+  DealRendezVousStatus,
+  DealStageEntry,
+  DealUtm,
+  TaskStatus,
+  TaskType,
+} from '../types'
 import { SLAIndicator } from './SLAIndicator'
 import { getParisToday } from '../utils/calendarMetrics'
 import {
@@ -1573,6 +1586,111 @@ function ProjetsCard({
   )
 }
 
+function formatDurationFr(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (m === 0) return `${h} h`
+  return `${h} h ${m} min`
+}
+
+const RDV_STATUS_BADGE_STYLES: Record<DealRendezVousStatus, string> = {
+  'À venir': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Réalisé': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Annulé': 'bg-gray-100 text-gray-500 border-gray-300',
+  'No-show': 'bg-red-50 text-red-700 border-red-200',
+}
+
+function formatRendezVousMeta(rdv: DealRendezVous): string {
+  const start = parseISO(rdv.startsAt)
+  if (!isValid(start)) return '—'
+  const datePart = format(start, 'EEEE d MMMM yyyy', { locale: fr })
+  const prettyDate = datePart.charAt(0).toUpperCase() + datePart.slice(1)
+  const timePart = format(start, 'HH:mm')
+  return `${prettyDate} · ${timePart} · ${formatDurationFr(rdv.durationMinutes)}`
+}
+
+function RendezVousTile({ rdv }: { rdv: DealRendezVous }) {
+  const titleCancelled = rdv.status === 'No-show' || rdv.status === 'Annulé'
+  return (
+    <div className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50/50 text-left">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span
+          className={`text-[13px] font-semibold ${
+            titleCancelled ? 'text-gray-400 line-through' : 'text-gray-900'
+          }`}
+        >
+          {rdv.title}
+        </span>
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0 ${RDV_STATUS_BADGE_STYLES[rdv.status]}`}
+        >
+          {rdv.status}
+        </span>
+      </div>
+      <div className="flex items-center gap-2 min-w-0">
+        <div
+          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
+          title={rdv.owner}
+        >
+          {getOwnerInitials(rdv.owner)}
+        </div>
+        <span className="text-[12px] text-gray-400 truncate">{formatRendezVousMeta(rdv)}</span>
+      </div>
+    </div>
+  )
+}
+
+function RendezVousCard({ rendezVous }: { rendezVous: DealRendezVous[] }) {
+  const [expanded, setExpanded] = useState(true)
+  const sorted = useMemo(
+    () =>
+      [...rendezVous].sort((a, b) => {
+        const ta = parseISO(a.startsAt).getTime()
+        const tb = parseISO(b.startsAt).getTime()
+        const na = Number.isNaN(ta) ? 0 : ta
+        const nb = Number.isNaN(tb) ? 0 : tb
+        return na - nb
+      }),
+    [rendezVous],
+  )
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center justify-between w-full cursor-pointer group"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
+            <Calendar size={15} className="text-gray-500" />
+          </div>
+          <span className="text-[14px] font-semibold text-gray-900">Rendez-vous</span>
+          <span className="text-[12px] font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
+            {rendezVous.length}
+          </span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`text-gray-300 group-hover:text-gray-500 transition-all duration-200 ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <div
+        className={`overflow-hidden transition-all duration-200 ease-out ${expanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}`}
+      >
+        <div className="mt-4 space-y-2">
+          {sorted.length === 0 ? (
+            <p className="text-[13px] text-gray-400 px-1">Aucun rendez-vous lié à ce deal.</p>
+          ) : (
+            sorted.map((rdv) => <RendezVousTile key={rdv.id} rdv={rdv} />)
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const STATUS_FILTERS: { label: string; value: 'pending' | 'Terminé' }[] = [
   { label: 'À traiter', value: 'pending' },
   { label: 'Validées', value: 'Terminé' },
@@ -1890,6 +2008,8 @@ export function DealDetailsSidebar({
             onDissociateProjet={canModifyProjets ? onDissociateProjet : undefined}
             onAssociateProjets={canModifyProjets ? onAssociateProjets : undefined}
           />
+
+          <RendezVousCard rendezVous={deal.rendezVous ?? []} />
 
           {/* Tasks card */}
           <TasksCard dealId={deal.dealId} />
