@@ -337,12 +337,14 @@ function compareDeal(a: Deal, b: Deal, key: SortKey, dir: SortDir): number {
 function FilterDropdown({
   label,
   options,
+  bottomOptions,
   selected,
   onToggle,
   onClear,
 }: {
   label: string
   options: string[]
+  bottomOptions?: string[]
   selected: Set<string>
   onToggle: (value: string) => void
   onClear: () => void
@@ -393,6 +395,24 @@ function FilterDropdown({
                 </button>
               )
             })}
+            {bottomOptions && bottomOptions.length > 0 && (
+              <>
+                <div className="border-t border-gray-100 my-1" />
+                {bottomOptions.map((opt) => {
+                  const checked = selected.has(opt)
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => onToggle(opt)}
+                      className={`w-full text-left px-4 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between ${checked ? 'font-semibold text-emerald-700' : 'text-gray-700'}`}
+                    >
+                      {opt}
+                      {checked && <Check size={14} className="text-emerald-600" />}
+                    </button>
+                  )
+                })}
+              </>
+            )}
           </div>
         </>
       )}
@@ -683,6 +703,53 @@ function formatDateToFrench(isoDate: string): string {
   return `${day} ${MONTHS[month - 1]} ${year}`
 }
 
+const CLOSE_DATE_MONTHS: Record<string, number> = {
+  'jan.': 0,
+  'janvier': 0,
+  'fév.': 1,
+  'février': 1,
+  'mars': 2,
+  'avr.': 3,
+  'avril': 3,
+  'mai': 4,
+  'juin': 5,
+  'juil.': 6,
+  'juillet': 6,
+  'août': 7,
+  'sep.': 8,
+  'septembre': 8,
+  'oct.': 9,
+  'octobre': 9,
+  'nov.': 10,
+  'novembre': 10,
+  'déc.': 11,
+  'décembre': 11,
+}
+
+function parseCloseDateDisplay(value: string): Date | null {
+  const m = value.trim().match(/^(\d{1,2})\s+(\S+)\s+(\d{4})$/)
+  if (!m) return null
+  const month = CLOSE_DATE_MONTHS[m[2].toLowerCase()]
+  if (month === undefined) return null
+  return new Date(parseInt(m[3], 10), month, parseInt(m[1], 10))
+}
+
+function isCloseDateTodayOrPast(displayDate: string): boolean {
+  const parsed = parseCloseDateDisplay(displayDate)
+  if (!parsed) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  parsed.setHours(0, 0, 0, 0)
+  return parsed.getTime() <= today.getTime()
+}
+
+function getCloseDateTextClass(displayDate: string | null | undefined, isClosed: boolean): string {
+  if (!displayDate) return 'text-gray-400'
+  if (isClosed) return 'text-gray-900'
+  if (isCloseDateTodayOrPast(displayDate)) return 'text-red-500'
+  return 'text-gray-900'
+}
+
 function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner: string; priority: DealPriority; closedDate: string | null; isWon: boolean; isLost: boolean }) {
   const [editingField, setEditingField] = useState<'owner' | 'priority' | 'closeDate' | null>(null)
   const [ownerValue, setOwnerValue] = useState(owner)
@@ -694,17 +761,27 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
   const ownerSearchRef = useRef<HTMLInputElement>(null)
   const dateInputRef = useRef<HTMLInputElement>(null)
 
+  const isClosed = isWon || isLost
+
   useEffect(() => {
     setPriorityValue(priority)
   }, [priority])
 
   useEffect(() => {
+    setCloseDateValue(closedDate || '')
+  }, [closedDate])
+
+  useEffect(() => {
+    if (isClosed && editingField === 'closeDate') setEditingField(null)
+  }, [isClosed, editingField])
+
+  useEffect(() => {
     if (editingField === 'owner') ownerSearchRef.current?.focus()
-    if (editingField === 'closeDate') {
+    if (editingField === 'closeDate' && !isClosed) {
       dateInputRef.current?.focus()
       dateInputRef.current?.showPicker()
     }
-  }, [editingField])
+  }, [editingField, isClosed])
 
   useEffect(() => {
     if (editingField !== 'owner' && editingField !== 'priority') return
@@ -834,7 +911,11 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
                 ))}
               </div>
             ) : null}
-            <div className="text-[14px] font-medium text-gray-900 min-h-[20px] flex items-center">
+            <div
+              className={`text-[14px] font-medium min-h-[20px] flex items-center ${
+                priorityValue === 'normal' ? 'text-gray-400' : 'text-gray-900'
+              }`}
+            >
               {PRIORITY_LABELS[priorityValue]}
             </div>
           </div>
@@ -860,7 +941,7 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
           </div>
           <div>
             <div className="text-[12px] text-gray-400">Close date</div>
-            {editingField === 'closeDate' ? (
+            {editingField === 'closeDate' && !isClosed ? (
               <input
                 ref={dateInputRef}
                 type="date"
@@ -869,15 +950,18 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
                 className="text-[14px] font-medium text-gray-900 border border-gray-200 rounded-lg px-2 py-0.5 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
               />
             ) : (
-              <div className={`text-[14px] font-medium ${
-                isWon ? 'text-emerald-700' : isLost ? 'text-red-500' : closedDate ? 'text-gray-900' : 'text-gray-400'
-              }`}>
+              <div
+                className={`text-[14px] font-medium ${getCloseDateTextClass(
+                  closeDateValue || closedDate,
+                  isClosed,
+                )}`}
+              >
                 {closeDateValue || 'Non définie'}
               </div>
             )}
           </div>
         </div>
-        {editingField !== 'closeDate' && (
+        {!isClosed && editingField !== 'closeDate' && (
           <button
             onClick={() => setEditingField('closeDate')}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all"
@@ -1415,6 +1499,7 @@ export function DealDetailsSidebar({
   const typeStyle = DEAL_TYPE_STYLES[deal.type] || 'bg-gray-50 text-gray-600 border-gray-200'
   const isWon = deal.etape === 'Gagnée'
   const isLost = deal.etape === 'Perdue'
+  const canModifyProjets = !isWon && !isLost
 
   return (
     <>
@@ -1520,8 +1605,8 @@ export function DealDetailsSidebar({
           <ProjetsCard
             projets={deal.projets}
             availableProjets={getAvailableProjetsForDeal(deal)}
-            onDissociateProjet={onDissociateProjet}
-            onAssociateProjets={onAssociateProjets}
+            onDissociateProjet={canModifyProjets ? onDissociateProjet : undefined}
+            onAssociateProjets={canModifyProjets ? onAssociateProjets : undefined}
           />
 
           {/* Tasks card */}
@@ -1554,21 +1639,27 @@ function getAvailableProjetsForDeal(deal: Deal): DealProjet[] {
     .map(clientProjectToDealProjet)
 }
 
+const SANS_PROJET = 'Sans projet'
+
 function DealsTab() {
   const [deals, setDeals] = useState<Deal[]>(() => clientProfile.deals)
 
   const [sortKey, setSortKey] = useState<SortKey | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [filterType, setFilterType] = useState<Set<string>>(new Set())
-  const [filterSource, setFilterSource] = useState<Set<string>>(new Set())
-  const [filterOwner, setFilterOwner] = useState<Set<string>>(new Set())
   const [filterEtape, setFilterEtape] = useState<Set<string>>(new Set())
+  const [filterProjet, setFilterProjet] = useState<Set<string>>(new Set())
+  const [filterOwner, setFilterOwner] = useState<Set<string>>(new Set())
+  const [filterSource, setFilterSource] = useState<Set<string>>(new Set())
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
 
   const types = ['New Biz', 'Cross-Sell', 'Upsell']
-  const sources = [...new Set(deals.map((d) => d.source))].sort()
-  const owners = [...new Set(deals.map((d) => d.owner))].sort((a, b) => a.localeCompare(b, 'fr'))
   const etapes = ['Nouvelle', 'Contacté / RDV pris', 'Qualifié', 'Signé / Souscrit', 'Gagnée', 'Perdue']
+  const projets = [
+    ...new Set(deals.flatMap((d) => d.projets.map((p) => p.projetName).filter(Boolean))),
+  ].sort((a, b) => a.localeCompare(b, 'fr'))
+  const owners = [...new Set(deals.map((d) => d.owner))].sort((a, b) => a.localeCompare(b, 'fr'))
+  const sources = [...new Set(deals.map((d) => d.source))].sort()
 
   const toggleSet = (prev: Set<string>, value: string): Set<string> => {
     const next = new Set(prev)
@@ -1588,9 +1679,18 @@ function DealsTab() {
 
   let filtered = deals.filter((d) => {
     if (filterType.size > 0 && !filterType.has(d.type)) return false
-    if (filterSource.size > 0 && !filterSource.has(d.source)) return false
-    if (filterOwner.size > 0 && !filterOwner.has(d.owner)) return false
     if (filterEtape.size > 0 && !filterEtape.has(d.etape)) return false
+    if (filterProjet.size > 0) {
+      const hasSansProjet = filterProjet.has(SANS_PROJET)
+      const namedFilters = new Set([...filterProjet].filter((v) => v !== SANS_PROJET))
+      const names = d.projets.map((p) => p.projetName)
+      const matches =
+        (hasSansProjet && d.projets.length === 0) ||
+        (namedFilters.size > 0 && names.some((name) => namedFilters.has(name)))
+      if (!matches) return false
+    }
+    if (filterOwner.size > 0 && !filterOwner.has(d.owner)) return false
+    if (filterSource.size > 0 && !filterSource.has(d.source)) return false
     return true
   })
 
@@ -1603,9 +1703,10 @@ function DealsTab() {
       {/* Filters bar */}
       <div className="flex items-center gap-3">
         <FilterDropdown label="Tous les types" options={types} selected={filterType} onToggle={(v) => setFilterType(toggleSet(filterType, v))} onClear={() => setFilterType(new Set())} />
-        <FilterDropdown label="Toutes les sources" options={sources} selected={filterSource} onToggle={(v) => setFilterSource(toggleSet(filterSource, v))} onClear={() => setFilterSource(new Set())} />
-        <FilterDropdown label="Tous les owners" options={owners} selected={filterOwner} onToggle={(v) => setFilterOwner(toggleSet(filterOwner, v))} onClear={() => setFilterOwner(new Set())} />
         <FilterDropdown label="Toutes les étapes" options={etapes} selected={filterEtape} onToggle={(v) => setFilterEtape(toggleSet(filterEtape, v))} onClear={() => setFilterEtape(new Set())} />
+        <FilterDropdown label="Tous les projets" options={projets} bottomOptions={[SANS_PROJET]} selected={filterProjet} onToggle={(v) => setFilterProjet(toggleSet(filterProjet, v))} onClear={() => setFilterProjet(new Set())} />
+        <FilterDropdown label="Tous les owners" options={owners} selected={filterOwner} onToggle={(v) => setFilterOwner(toggleSet(filterOwner, v))} onClear={() => setFilterOwner(new Set())} />
+        <FilterDropdown label="Toutes les sources" options={sources} selected={filterSource} onToggle={(v) => setFilterSource(toggleSet(filterSource, v))} onClear={() => setFilterSource(new Set())} />
       </div>
 
       {/* Deals table */}
@@ -1635,6 +1736,7 @@ function DealsTab() {
                 const alt = i % 2 === 1
                 const rowBg = alt ? 'bg-gray-50/80' : ''
                 const isSelected = selectedDeal?.id === deal.id
+                const isPerdue = deal.etape === 'Perdue'
                 return (
                   <tr
                     key={deal.id}
@@ -1652,10 +1754,10 @@ function DealsTab() {
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       <ProjetCell projets={deal.projets} />
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className={`px-5 py-3.5 ${isPerdue ? 'opacity-50' : ''}`}>
                       <DealPriorityFlames priority={deal.priority} size={14} />
                     </td>
-                    <td className={`px-5 py-3.5 text-[13px] font-semibold text-right whitespace-nowrap ${deal.etape === 'Perdue' ? 'text-gray-400' : 'text-gray-900'}`}>{formatCurrencyInt(deal.montant)}</td>
+                    <td className={`px-5 py-3.5 text-[13px] font-semibold text-right whitespace-nowrap ${isPerdue ? 'text-gray-400' : 'text-gray-900'}`}>{formatCurrencyInt(deal.montant)}</td>
                     <td className="px-5 py-3.5">
                       <StageProgressBar currentEtape={deal.etape} lastReachedEtape={deal.lastReachedEtape} />
                     </td>
