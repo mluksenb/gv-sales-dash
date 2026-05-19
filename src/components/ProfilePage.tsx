@@ -8,8 +8,11 @@ import type { Page } from '../App'
 import type { ClientProject, Deal, DealProjet, DealStageEntry, TaskStatus, TaskType } from '../types'
 import { SLAIndicator } from './SLAIndicator'
 import { getParisToday } from '../utils/calendarMetrics'
-
-type ProfileTab = 'informations' | 'opportunites' | 'projets'
+import {
+  getProfileTabFromUrl,
+  PROFILE_TAB_PARAM,
+  type ProfileTab,
+} from '../lib/profileTabs'
 
 const ALL_TABS = [
   { id: 'informations' as const, label: 'Informations' },
@@ -23,17 +26,6 @@ const ALL_TABS = [
 ] as const
 
 const ACTIVE_TABS = new Set<string>(['informations', 'opportunites', 'projets'])
-
-const PROFILE_TAB_PARAM = 'tab'
-const DEFAULT_PROFILE_TAB: ProfileTab = 'informations'
-
-function getProfileTabFromUrl(search: string): ProfileTab {
-  const tab = new URLSearchParams(search).get(PROFILE_TAB_PARAM)
-  if (tab === 'informations' || tab === 'projets' || tab === 'opportunites') {
-    return tab
-  }
-  return DEFAULT_PROFILE_TAB
-}
 
 function withProfileTabInUrl(tab: ProfileTab): string {
   const params = new URLSearchParams(window.location.search)

@@ -3,14 +3,26 @@ import { Dashboard } from './components/Dashboard'
 import { HomePage } from './components/HomePage'
 import { ObjectivesPage } from './components/ObjectivesPage'
 import { ProfilePage } from './components/ProfilePage'
+import { profileUrl, type ProfileTab } from './lib/profileTabs'
 
 export type Page = 'home' | 'dashboard' | 'objectifs' | 'profile'
+
+export type NavigateOptions = { profileTab?: ProfileTab }
+
+export type SetPageFn = (page: Page, options?: NavigateOptions) => void
 
 const PAGE_PATHS: Record<Page, string> = {
   home: '/',
   dashboard: '/dashboard',
   objectifs: '/objectifs',
   profile: '/profile',
+}
+
+function pageUrl(page: Page, options?: NavigateOptions): string {
+  if (page === 'profile' && options?.profileTab) {
+    return profileUrl(options.profileTab)
+  }
+  return PAGE_PATHS[page]
 }
 
 function resolvePageFromPath(pathname: string): Page {
@@ -33,12 +45,13 @@ function App() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  const navigateToPage = (nextPage: Page) => {
+  const navigateToPage: SetPageFn = (nextPage, options) => {
     setPage(nextPage)
-    const nextPath = PAGE_PATHS[nextPage]
+    const nextUrl = pageUrl(nextPage, options)
+    const currentUrl = `${window.location.pathname}${window.location.search}`
 
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, '', nextPath)
+    if (currentUrl !== nextUrl) {
+      window.history.pushState({}, '', nextUrl)
     }
   }
 
