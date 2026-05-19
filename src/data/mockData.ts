@@ -600,11 +600,11 @@ export const clientProfile: ClientProfile = {
       closedDate: '14 mai 2026',
       lastReachedEtape: null,
       stageHistory: [
-        { etape: 'Nouvelle', enteredAt: '12 mai 2026, 14:22' },
-        { etape: 'Contacté / RDV pris', enteredAt: '12 mai 2026, 15:40' },
-        { etape: 'Qualifié', enteredAt: '13 mai 2026, 09:15' },
-        { etape: 'Signé / Souscrit', enteredAt: '13 mai 2026, 17:30' },
-        { etape: 'Gagnée', enteredAt: '14 mai 2026, 10:05' },
+        { etape: 'Nouvelle', enteredAt: '12 mai 2026, 14:22', source: 'auto' },
+        { etape: 'Contacté / RDV pris', enteredAt: '12 mai 2026, 15:40', source: 'auto' },
+        { etape: 'Qualifié', enteredAt: '13 mai 2026, 09:15', source: 'auto' },
+        { etape: 'Signé / Souscrit', enteredAt: '13 mai 2026, 17:30', source: 'auto' },
+        { etape: 'Gagnée', enteredAt: '14 mai 2026, 10:05', source: 'auto' },
       ],
       amountHistory: [
         { montant: 10_000, changedAt: '12 mai 2026, 14:22' },
@@ -632,9 +632,9 @@ export const clientProfile: ClientProfile = {
       closedDate: null,
       lastReachedEtape: null,
       stageHistory: [
-        { etape: 'Nouvelle', enteredAt: '03 avr. 2026, 09:45' },
-        { etape: 'Contacté / RDV pris', enteredAt: '05 avr. 2026, 14:10' },
-        { etape: 'Qualifié', enteredAt: '12 avr. 2026, 11:20' },
+        { etape: 'Nouvelle', enteredAt: '03 avr. 2026, 09:45', source: 'auto' },
+        { etape: 'Contacté / RDV pris', enteredAt: '05 avr. 2026, 14:10', source: 'auto' },
+        { etape: 'Qualifié', enteredAt: '12 avr. 2026, 11:20', source: 'auto' },
       ],
       amountHistory: [
         { montant: 5_000, changedAt: '03 avr. 2026, 09:45' },
@@ -661,11 +661,11 @@ export const clientProfile: ClientProfile = {
       closedDate: '22 mars 2026',
       lastReachedEtape: null,
       stageHistory: [
-        { etape: 'Nouvelle', enteredAt: '18 mars 2026, 16:10' },
-        { etape: 'Contacté / RDV pris', enteredAt: '19 mars 2026, 09:00' },
-        { etape: 'Qualifié', enteredAt: '20 mars 2026, 10:45' },
-        { etape: 'Signé / Souscrit', enteredAt: '21 mars 2026, 14:30' },
-        { etape: 'Gagnée', enteredAt: '22 mars 2026, 08:15' },
+        { etape: 'Nouvelle', enteredAt: '18 mars 2026, 16:10', source: 'auto' },
+        { etape: 'Contacté / RDV pris', enteredAt: '19 mars 2026, 09:00', source: 'auto' },
+        { etape: 'Qualifié', enteredAt: '20 mars 2026, 10:45', source: 'auto' },
+        { etape: 'Signé / Souscrit', enteredAt: '21 mars 2026, 14:30', source: 'auto' },
+        { etape: 'Gagnée', enteredAt: '22 mars 2026, 08:15', source: 'auto' },
       ],
       amountHistory: [
         { montant: 1_000, changedAt: '18 mars 2026, 16:10' },
@@ -691,11 +691,11 @@ export const clientProfile: ClientProfile = {
       closedDate: '10 mars 2026',
       lastReachedEtape: 'Signé / Souscrit',
       stageHistory: [
-        { etape: 'Nouvelle', enteredAt: '28 fév. 2026, 11:30' },
-        { etape: 'Contacté / RDV pris', enteredAt: '01 mars 2026, 10:15' },
-        { etape: 'Qualifié', enteredAt: '04 mars 2026, 16:00' },
-        { etape: 'Signé / Souscrit', enteredAt: '07 mars 2026, 11:45' },
-        { etape: 'Perdue', enteredAt: '10 mars 2026, 09:30' },
+        { etape: 'Nouvelle', enteredAt: '28 fév. 2026, 11:30', source: 'auto' },
+        { etape: 'Contacté / RDV pris', enteredAt: '01 mars 2026, 10:15', source: 'auto' },
+        { etape: 'Qualifié', enteredAt: '04 mars 2026, 16:00', source: 'auto' },
+        { etape: 'Signé / Souscrit', enteredAt: '07 mars 2026, 11:45', source: 'auto' },
+        { etape: 'Perdue', enteredAt: '10 mars 2026, 09:30', source: 'auto' },
       ],
       amountHistory: [
         { montant: 8_000, changedAt: '28 fév. 2026, 11:30' },
@@ -723,8 +723,8 @@ export const clientProfile: ClientProfile = {
       closedDate: null,
       lastReachedEtape: null,
       stageHistory: [
-        { etape: 'Nouvelle', enteredAt: '15 jan. 2026, 08:55' },
-        { etape: 'Contacté / RDV pris', enteredAt: '20 jan. 2026, 14:30' },
+        { etape: 'Nouvelle', enteredAt: '15 jan. 2026, 08:55', source: 'auto' },
+        { etape: 'Contacté / RDV pris', enteredAt: '20 jan. 2026, 14:30', source: 'auto' },
       ],
       amountHistory: [
         { montant: 15_000, changedAt: '15 jan. 2026, 08:55' },

@@ -5,7 +5,7 @@ import { format, parse, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { clientProfile, tasks as allTasks } from '../data/mockData'
 import type { Page } from '../App'
-import type { ClientProject, Deal, DealPriority, DealProjet, DealStageEntry, TaskStatus, TaskType } from '../types'
+import type { ClientProject, Deal, DealEtape, DealLossReason, DealPriority, DealProjet, DealStageEntry, DealUtm, TaskStatus, TaskType } from '../types'
 import { SLAIndicator } from './SLAIndicator'
 import { getParisToday } from '../utils/calendarMetrics'
 import {
@@ -13,6 +13,8 @@ import {
   PROFILE_TAB_PARAM,
   type ProfileTab,
 } from '../lib/profileTabs'
+import { loadDeals, saveDeals } from '../lib/dealStorage'
+import { applyStageChange, getStageHistorySourceLabel, getStageLabelClass, LOSS_REASON_OPTIONS } from '../lib/dealStage'
 
 const ALL_TABS = [
   { id: 'informations' as const, label: 'Informations' },
@@ -529,159 +531,99 @@ function formatDuration(fromStr: string, toStr: string | null): string {
   return `${m}min`
 }
 
-function SidebarStageProgress({ currentEtape, lastReachedEtape, stageHistory }: { currentEtape: string; lastReachedEtape: string | null; stageHistory: DealStageEntry[] }) {
+function DealStageProgressBar({ currentEtape, lastReachedEtape }: { currentEtape: string; lastReachedEtape: string | null }) {
   const isPerdue = currentEtape === 'Perdue'
   const progressStages = ETAPE_PIPELINE.filter((s) => s.id !== 'Perdue')
   const effectiveEtape = isPerdue ? (lastReachedEtape || 'Nouvelle') : currentEtape
   const currentIdx = progressStages.findIndex((s) => s.id === effectiveEtape)
-  const [expanded, setExpanded] = useState(false)
-
-  const lastEntry = stageHistory[stageHistory.length - 1]
-  const sinceDuration = lastEntry ? formatDuration(lastEntry.enteredAt, null) : ''
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1">
-        {progressStages.map((stage, i) => {
-          const completed = i <= currentIdx
-          const stageColors: Record<string, string> = {
-            'Nouvelle': '#93c5fd',
-            'Contacté / RDV pris': '#fbbf24',
-            'Qualifié': '#a78bfa',
-            'Signé / Souscrit': '#fb923c',
-            'Gagnée': '#34d399',
-          }
-          return (
-            <div
-              key={stage.id}
-              className={`h-1.5 flex-1 rounded-full transition-colors ${
-                !completed ? 'bg-gray-100' : isPerdue ? 'bg-gray-300' : ''
-              }`}
-              style={!isPerdue && completed ? { backgroundColor: stageColors[stage.id] || '#d1d5db' } : undefined}
-            />
-          )
-        })}
-      </div>
-      {!expanded && (
-        <button
-          onClick={() => stageHistory.length > 0 && setExpanded(true)}
-          className="flex items-center justify-between w-full group cursor-pointer"
-        >
-          <div className="flex items-center gap-2">
-            <StageBadge etape={currentEtape} />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] text-gray-400">
-              depuis {sinceDuration}
-            </span>
-            {stageHistory.length > 0 && (
-              <ChevronDown size={14} className="text-gray-300 group-hover:text-gray-500 transition-colors" />
-            )}
-          </div>
-        </button>
-      )}
-
-      {/* Expandable stage history log */}
-      <div className={`overflow-hidden transition-all duration-200 ease-out ${expanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="mt-1 rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
-          <table className="w-full">
-            <tbody>
-              {stageHistory.map((entry, i) => {
-                const isCurrent = entry.etape === currentEtape
-                const nextEntry = stageHistory[i + 1] ?? null
-                const duration = formatDuration(entry.enteredAt, nextEntry?.enteredAt ?? null)
-                const pipelineEntry = ETAPE_PIPELINE.find(s => s.id === entry.etape)
-                const Icon = pipelineEntry?.icon
-                return (
-                  <tr key={i} className={isCurrent ? 'bg-white' : ''}>
-                    <td className="pl-3 pr-1 py-2.5 w-0">
-                      <div className="flex items-center justify-center w-3">
-                        {isCurrent && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="pr-2 py-2.5">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-medium border whitespace-nowrap ${
-                        isCurrent
-                          ? (ETAPE_BADGE_STYLES[entry.etape] || 'bg-gray-50 text-gray-600 border-gray-200') + ' ring-1 ring-offset-1 ' + (pipelineEntry?.activeBorder || 'ring-gray-300')
-                          : entry.etape === 'Perdue'
-                            ? 'bg-gray-100 text-gray-500 border-gray-300'
-                            : 'bg-white text-gray-500 border-gray-200'
-                      }`}>
-                        {Icon && <Icon size={11} className="shrink-0" />}
-                        {entry.etape}
-                      </span>
-                    </td>
-                    <td className={`px-2 py-2.5 text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {duration}
-                    </td>
-                    <td className={`pr-3.5 pl-2 py-2.5 text-right text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
-                      {entry.enteredAt}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-          <div className="flex justify-center py-1 border-t border-gray-100">
-            <button
-              onClick={() => setExpanded(false)}
-              className="w-6 h-5 rounded flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-            >
-              <ChevronUp size={14} />
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="flex items-center gap-1">
+      {progressStages.map((stage, i) => {
+        const completed = i <= currentIdx
+        const stageColors: Record<string, string> = {
+          'Nouvelle': '#93c5fd',
+          'Contacté / RDV pris': '#fbbf24',
+          'Qualifié': '#a78bfa',
+          'Signé / Souscrit': '#fb923c',
+          'Gagnée': '#34d399',
+        }
+        return (
+          <div
+            key={stage.id}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              !completed ? 'bg-gray-100' : isPerdue ? 'bg-gray-300' : ''
+            }`}
+            style={!isPerdue && completed ? { backgroundColor: stageColors[stage.id] || '#d1d5db' } : undefined}
+          />
+        )
+      })}
     </div>
   )
 }
 
-function SourceCard({ source, utm }: { source: string; utm: { utmSource: string | null; utmMedium: string | null; utmCampaign: string | null; utmContent: string | null } }) {
-  const [expanded, setExpanded] = useState(false)
-  const hasUtm = utm.utmSource || utm.utmMedium || utm.utmCampaign || utm.utmContent
-  const utmRows = [
-    { label: 'utm_source', value: utm.utmSource },
-    { label: 'utm_medium', value: utm.utmMedium },
-    { label: 'utm_campaign', value: utm.utmCampaign },
-    { label: 'utm_content', value: utm.utmContent },
-  ]
-
+function StageHistoryLog({ stageHistory, currentEtape }: { stageHistory: DealStageEntry[]; currentEtape: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-      <button
-        onClick={() => hasUtm && setExpanded((v) => !v)}
-        className={`flex items-center justify-between w-full ${hasUtm ? 'cursor-pointer group' : 'cursor-default'}`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
-            <Building2 size={15} className="text-gray-500" />
-          </div>
-          <div className="text-left">
-            <div className="text-[12px] text-gray-400">Source</div>
-            <div className="text-[14px] font-semibold text-gray-900">{source}</div>
-          </div>
-        </div>
-        {hasUtm && (
-          <ChevronDown size={16} className={`text-gray-300 group-hover:text-gray-500 transition-all duration-200 ${expanded ? 'rotate-180' : ''}`} />
-        )}
-      </button>
-      <div className={`overflow-hidden transition-all duration-200 ease-out ${expanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-          {utmRows.map((row) => (
-            <div key={row.label} className="flex items-center justify-between">
-              <span className="text-[12px] text-gray-400 font-mono">{row.label}</span>
-              <span className={`text-[13px] ${row.value ? 'text-gray-700 font-medium' : 'text-gray-300'}`}>
-                {row.value || '—'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-gray-100">
+            <th className="pl-3 pr-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Etape
+            </th>
+            <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Source
+            </th>
+            <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Temps dans l&apos;étape
+            </th>
+            <th className="pr-3.5 pl-2 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Date de modif.
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {stageHistory.map((entry, i) => {
+            const isCurrent = entry.etape === currentEtape
+            const nextEntry = stageHistory[i + 1] ?? null
+            const duration = formatDuration(entry.enteredAt, nextEntry?.enteredAt ?? null)
+            const sourceLabel = getStageHistorySourceLabel(entry)
+            return (
+              <tr key={i}>
+                <td className="pl-3 pr-2 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center justify-center w-3 shrink-0">
+                      {isCurrent ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" /> : null}
+                    </div>
+                    <span
+                      className={`text-[13px] font-medium truncate ${
+                        isCurrent ? getStageLabelClass(entry.etape as DealEtape) : 'text-gray-500'
+                      }`}
+                    >
+                      {entry.etape}
+                    </span>
+                  </div>
+                </td>
+                <td className={`px-2 py-2.5 text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {sourceLabel}
+                </td>
+                <td className={`px-2 py-2.5 text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>
+                  {duration}
+                </td>
+                <td
+                  className={`pr-3.5 pl-2 py-2.5 text-right text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-700 font-medium' : 'text-gray-400'}`}
+                >
+                  {entry.enteredAt}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
+
 
 const OWNER_OPTIONS = ['Hildegarde Champey', 'Étienne Moreau', 'Sophie Laurent', 'Marc Dupont', 'Julie Fontaine']
 
@@ -750,8 +692,238 @@ function getCloseDateTextClass(displayDate: string | null | undefined, isClosed:
   return 'text-gray-900'
 }
 
-function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner: string; priority: DealPriority; closedDate: string | null; isWon: boolean; isLost: boolean }) {
+function LossReasonModal({
+  open,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean
+  onCancel: () => void
+  onConfirm: (reason: DealLossReason) => void
+}) {
+  if (!open) return null
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/20 z-[60]" onClick={onCancel} aria-hidden />
+      <div className="fixed inset-0 z-[61] flex items-center justify-center p-4 pointer-events-none">
+        <div
+          className="pointer-events-auto w-full max-w-sm bg-white rounded-2xl border border-gray-200 shadow-xl p-5"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="loss-reason-title"
+        >
+          <h3 id="loss-reason-title" className="text-[15px] font-semibold text-gray-900 mb-1">
+            Raison fermée
+          </h3>
+          <p className="text-[13px] text-gray-500 mb-4">Sélectionnez la raison de la perte du deal.</p>
+          <div className="space-y-1">
+            {LOSS_REASON_OPTIONS.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                onClick={() => onConfirm(reason)}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] text-gray-700 hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-colors"
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-4 w-full py-2.5 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-50 border border-gray-200 transition-colors"
+          >
+            Annuler
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function StageCard({
+  etape,
+  stageHistory,
+  onStageChange,
+}: {
+  etape: DealEtape
+  stageHistory: DealStageEntry[]
+  onStageChange?: (newEtape: DealEtape, lossReason?: DealLossReason) => void
+}) {
+  const [historyExpanded, setHistoryExpanded] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [lossModalOpen, setLossModalOpen] = useState(false)
+  const [pendingStageChange, setPendingStageChange] = useState<DealEtape | null>(null)
+  const stageDropdownRef = useRef<HTMLDivElement>(null)
+
+  const hasHistory = stageHistory.length > 0
+  const currentStageEntry = ETAPE_PIPELINE.find((s) => s.id === etape)
+  const currentStageStartEntry = [...stageHistory].reverse().find((e) => e.etape === etape)
+  const sinceInCurrentStage = currentStageStartEntry
+    ? formatDuration(currentStageStartEntry.enteredAt, null)
+    : ''
+
+  useEffect(() => {
+    if (!editing) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (stageDropdownRef.current && !stageDropdownRef.current.contains(e.target as Node)) {
+        setEditing(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [editing])
+
+  const handleStageSelect = (stageId: DealEtape) => {
+    if (stageId === etape) {
+      setEditing(false)
+      return
+    }
+    if (stageId === 'Perdue') {
+      setEditing(false)
+      setLossModalOpen(true)
+      return
+    }
+    setEditing(false)
+    setPendingStageChange(stageId)
+  }
+
+  const handleStageChangeConfirm = () => {
+    if (pendingStageChange) {
+      onStageChange?.(pendingStageChange)
+    }
+    setPendingStageChange(null)
+  }
+
+  const handleLossReasonConfirm = (reason: DealLossReason) => {
+    onStageChange?.('Perdue', reason)
+    setLossModalOpen(false)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3">
+      <LossReasonModal
+        open={lossModalOpen}
+        onCancel={() => setLossModalOpen(false)}
+        onConfirm={handleLossReasonConfirm}
+      />
+      {pendingStageChange && (
+        <ConfirmDialog
+          title="Changer l'étape"
+          message={`Confirmer le passage de « ${currentStageEntry?.label ?? etape} » à « ${
+            ETAPE_PIPELINE.find((s) => s.id === pendingStageChange)?.label ?? pendingStageChange
+          } » ?`}
+          confirmLabel="Confirmer"
+          confirmButtonClassName="text-white bg-emerald-600 hover:bg-emerald-700"
+          onConfirm={handleStageChangeConfirm}
+          onCancel={() => setPendingStageChange(null)}
+        />
+      )}
+
+      <div className="flex items-center justify-between gap-1.5">
+        <div ref={stageDropdownRef} className="relative flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => onStageChange && setEditing((v) => !v)}
+            disabled={!onStageChange}
+            aria-expanded={!!(editing && onStageChange)}
+            aria-haspopup="listbox"
+            title={onStageChange ? "Modifier l'étape" : undefined}
+            className={`flex items-center w-full text-left min-w-0 rounded-lg border transition-colors ${
+              onStageChange
+                ? `cursor-pointer px-2 py-1 border-transparent hover:bg-gray-50 hover:border-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:border-emerald-200/60 active:bg-gray-100/60 ${
+                    editing ? 'bg-gray-50 border-gray-200' : ''
+                  }`
+                : 'cursor-default py-1 border-transparent'
+            }`}
+          >
+            <div className="text-left min-w-0">
+              <div className="text-[12px] text-gray-400">Étape</div>
+              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 min-w-0">
+                <span className={`text-[14px] font-semibold ${getStageLabelClass(etape)}`}>
+                  {currentStageEntry?.label ?? etape}
+                </span>
+                {!historyExpanded && sinceInCurrentStage ? (
+                  <span className="text-[13px] font-normal text-gray-400 whitespace-nowrap">
+                    (depuis {sinceInCurrentStage})
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </button>
+          {editing && onStageChange ? (
+            <div className="absolute top-full left-0 mt-1 z-20 w-64 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden py-1 max-h-72 overflow-y-auto">
+              {ETAPE_PIPELINE.map((stage) => {
+                const Icon = stage.icon
+                const isSelected = stage.id === etape
+                return (
+                  <button
+                    key={stage.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleStageSelect(stage.id as DealEtape)}
+                    className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between gap-2 ${
+                      isSelected ? 'font-semibold bg-gray-50' : ''
+                    }`}
+                  >
+                    <span className={`flex items-center gap-2.5 min-w-0 ${getStageLabelClass(stage.id as DealEtape)}`}>
+                      <Icon size={14} className="shrink-0" />
+                      <span className="truncate">{stage.label}</span>
+                    </span>
+                    {isSelected && <Check size={14} className="text-emerald-600 shrink-0" />}
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
+        </div>
+        {hasHistory && (
+          <button
+            type="button"
+            onClick={() => setHistoryExpanded((v) => !v)}
+            className="shrink-0 p-1 rounded-lg hover:bg-gray-50 group"
+            aria-expanded={historyExpanded}
+            aria-label="Historique des étapes"
+          >
+            <ChevronDown
+              size={16}
+              className={`text-gray-300 group-hover:text-gray-500 transition-all duration-200 ${historyExpanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+        )}
+      </div>
+
+      <div
+        className={`overflow-hidden transition-all duration-200 ease-out ${historyExpanded ? 'max-h-[560px] opacity-100' : 'max-h-0 opacity-0'}`}
+      >
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <StageHistoryLog stageHistory={stageHistory} currentEtape={etape} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function KeyDetailsCard({
+  owner,
+  priority,
+  closedDate,
+  source,
+  utm,
+  isWon,
+  isLost,
+}: {
+  owner: string
+  priority: DealPriority
+  closedDate: string | null
+  source: string
+  utm: DealUtm
+  isWon: boolean
+  isLost: boolean
+}) {
   const [editingField, setEditingField] = useState<'owner' | 'priority' | 'closeDate' | null>(null)
+  const [sourceExpanded, setSourceExpanded] = useState(false)
   const [ownerValue, setOwnerValue] = useState(owner)
   const [priorityValue, setPriorityValue] = useState(priority)
   const [closeDateValue, setCloseDateValue] = useState(closedDate || '')
@@ -762,6 +934,13 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
   const dateInputRef = useRef<HTMLInputElement>(null)
 
   const isClosed = isWon || isLost
+  const hasUtm = Boolean(utm.utmSource || utm.utmMedium || utm.utmCampaign || utm.utmContent)
+  const utmRows = [
+    { label: 'utm_source', value: utm.utmSource },
+    { label: 'utm_medium', value: utm.utmMedium },
+    { label: 'utm_campaign', value: utm.utmCampaign },
+    { label: 'utm_content', value: utm.utmContent },
+  ]
 
   useEffect(() => {
     setPriorityValue(priority)
@@ -799,9 +978,7 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [editingField])
 
-  const filteredOwners = OWNER_OPTIONS.filter((name) =>
-    name.toLowerCase().includes(ownerSearch.toLowerCase())
-  )
+  const filteredOwners = OWNER_OPTIONS.filter((name) => name.toLowerCase().includes(ownerSearch.toLowerCase()))
 
   const handleOwnerSelect = (name: string) => {
     setOwnerValue(name)
@@ -822,95 +999,102 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
     setEditingField(null)
   }
 
+  const keyFieldBtnClass = (isActive: boolean, enabled: boolean) =>
+    enabled
+      ? `w-full text-left min-w-0 rounded-lg border transition-colors px-2 py-1 ${
+          isActive
+            ? 'border-gray-200 bg-gray-50 cursor-pointer'
+            : 'cursor-pointer border-transparent hover:bg-gray-50 hover:border-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:border-emerald-200/60 active:bg-gray-100/60'
+        }`
+      : 'w-full text-left min-w-0 rounded-lg border border-transparent px-2 py-1 cursor-default'
+
+  const toggleField = (field: 'owner' | 'priority' | 'closeDate') => {
+    setEditingField((f) => {
+      if (f === field) {
+        if (field === 'owner') setOwnerSearch('')
+        return null
+      }
+      if (f === 'owner') setOwnerSearch('')
+      return field
+    })
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
       {/* Owner */}
-      <div className="flex items-center justify-between group">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600">
-            {getOwnerInitials(ownerValue)}
-          </div>
-          <div className="relative">
-            <div className="text-[12px] text-gray-400">Owner</div>
-            {editingField === 'owner' ? (
-              <div ref={ownerDropdownRef} className="absolute top-full left-0 mt-1 z-20 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100">
-                  <Search size={14} className="text-gray-400 shrink-0" />
-                  <input
-                    ref={ownerSearchRef}
-                    value={ownerSearch}
-                    onChange={(e) => setOwnerSearch(e.target.value)}
-                    placeholder="Rechercher..."
-                    className="flex-1 text-[13px] text-gray-900 outline-none placeholder:text-gray-400"
-                  />
-                </div>
-                <div className="max-h-48 overflow-y-auto py-1">
-                  {filteredOwners.length === 0 ? (
-                    <div className="px-3 py-2.5 text-[13px] text-gray-400">Aucun résultat</div>
-                  ) : (
-                    filteredOwners.map((name) => (
-                      <button
-                        key={name}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => handleOwnerSelect(name)}
-                        className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between ${
-                          name === ownerValue ? 'font-semibold text-emerald-700' : 'text-gray-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0">
-                            {getOwnerInitials(name)}
-                          </div>
-                          {name}
-                        </div>
-                        {name === ownerValue && <Check size={14} className="text-emerald-600 shrink-0" />}
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            ) : null}
-            <div className="text-[14px] font-medium text-gray-900">{ownerValue}</div>
-          </div>
+      <div className="flex items-center gap-3 w-full min-w-0">
+        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[11px] font-semibold text-gray-600 shrink-0">
+          {getOwnerInitials(ownerValue)}
         </div>
-        {editingField !== 'owner' && (
+        <div ref={ownerDropdownRef} className="relative flex-1 min-w-0">
           <button
-            onClick={() => setEditingField('owner')}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all"
+            type="button"
+            onClick={() => toggleField('owner')}
+            aria-expanded={editingField === 'owner'}
+            aria-haspopup="listbox"
+            className={keyFieldBtnClass(editingField === 'owner', true)}
           >
-            <PenLine size={13} />
+            <div className="text-[12px] text-gray-400">Owner</div>
+            <div className="text-[14px] font-medium text-gray-900">{ownerValue}</div>
           </button>
-        )}
+          {editingField === 'owner' ? (
+            <div className="absolute top-full left-0 mt-1 z-20 w-56 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100">
+                <Search size={14} className="text-gray-400 shrink-0" />
+                <input
+                  ref={ownerSearchRef}
+                  value={ownerSearch}
+                  onChange={(e) => setOwnerSearch(e.target.value)}
+                  placeholder="Rechercher..."
+                  className="flex-1 text-[13px] text-gray-900 outline-none placeholder:text-gray-400"
+                />
+              </div>
+              <div className="max-h-48 overflow-y-auto py-1">
+                {filteredOwners.length === 0 ? (
+                  <div className="px-3 py-2.5 text-[13px] text-gray-400">Aucun résultat</div>
+                ) : (
+                  filteredOwners.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleOwnerSelect(name)}
+                      className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between ${
+                        name === ownerValue ? 'font-semibold text-emerald-700' : 'text-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0">
+                          {getOwnerInitials(name)}
+                        </div>
+                        {name}
+                      </div>
+                      {name === ownerValue && <Check size={14} className="text-emerald-600 shrink-0" />}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
-
 
       <div className="border-t border-gray-100" />
 
       {/* Priority */}
-      <div className="flex items-center justify-between group">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
-            <Flame size={15} className="text-gray-400" />
-          </div>
-          <div className="relative">
+      <div className="flex items-center gap-3 w-full min-w-0">
+        <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+          <Flame size={15} className="text-gray-400" />
+        </div>
+        <div ref={priorityDropdownRef} className="relative flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => toggleField('priority')}
+            aria-expanded={editingField === 'priority'}
+            aria-haspopup="listbox"
+            className={keyFieldBtnClass(editingField === 'priority', true)}
+          >
             <div className="text-[12px] text-gray-400">Niveau de priorité</div>
-            {editingField === 'priority' ? (
-              <div ref={priorityDropdownRef} className="absolute top-full left-0 mt-1 z-20 w-52 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden py-1">
-                {PRIORITY_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handlePrioritySelect(option.value)}
-                    className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between ${
-                      option.value === priorityValue ? 'font-semibold text-emerald-700' : 'text-gray-700'
-                    }`}
-                  >
-                    {option.label}
-                    {option.value === priorityValue && <Check size={14} className="text-emerald-600 shrink-0" />}
-                  </button>
-                ))}
-              </div>
-            ) : null}
             <div
               className={`text-[14px] font-medium min-h-[20px] flex items-center ${
                 priorityValue === 'normal' ? 'text-gray-400' : 'text-gray-900'
@@ -918,38 +1102,47 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
             >
               {PRIORITY_LABELS[priorityValue]}
             </div>
-          </div>
-        </div>
-        {editingField !== 'priority' && (
-          <button
-            onClick={() => setEditingField('priority')}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all"
-          >
-            <PenLine size={13} />
           </button>
-        )}
+          {editingField === 'priority' ? (
+            <div className="absolute top-full left-0 mt-1 z-20 w-52 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden py-1">
+              {PRIORITY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handlePrioritySelect(option.value)}
+                  className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between ${
+                    option.value === priorityValue ? 'font-semibold text-emerald-700' : 'text-gray-700'
+                  }`}
+                >
+                  {option.label}
+                  {option.value === priorityValue && <Check size={14} className="text-emerald-600 shrink-0" />}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="border-t border-gray-100" />
 
       {/* Close date */}
-
-      <div className="flex items-center justify-between group">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center">
-            <Calendar size={15} className="text-gray-400" />
-          </div>
-          <div>
-            <div className="text-[12px] text-gray-400">Close date</div>
-            {editingField === 'closeDate' && !isClosed ? (
-              <input
-                ref={dateInputRef}
-                type="date"
-                onChange={handleDateChange}
-                onBlur={() => setEditingField(null)}
-                className="text-[14px] font-medium text-gray-900 border border-gray-200 rounded-lg px-2 py-0.5 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-              />
-            ) : (
+      <div className="flex items-center gap-3 w-full min-w-0">
+        <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+          <Calendar size={15} className="text-gray-400" />
+        </div>
+        <div className="relative flex-1 min-w-0">
+          {editingField === 'closeDate' && !isClosed ? (
+            <input
+              ref={dateInputRef}
+              type="date"
+              onChange={handleDateChange}
+              onBlur={() => setEditingField(null)}
+              className="w-full text-[14px] font-medium text-gray-900 border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+            />
+          ) : isClosed ? (
+            <div className={keyFieldBtnClass(false, false)}>
+              <div className="text-[12px] text-gray-400">Close date</div>
               <div
                 className={`text-[14px] font-medium ${getCloseDateTextClass(
                   closeDateValue || closedDate,
@@ -958,17 +1151,67 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
               >
                 {closeDateValue || 'Non définie'}
               </div>
-            )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => toggleField('closeDate')}
+              className={keyFieldBtnClass(false, true)}
+            >
+              <div className="text-[12px] text-gray-400">Close date</div>
+              <div
+                className={`text-[14px] font-medium ${getCloseDateTextClass(
+                  closeDateValue || closedDate,
+                  isClosed,
+                )}`}
+              >
+                {closeDateValue || 'Non définie'}
+              </div>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t border-gray-100" />
+
+      {/* Source (+ expandable UTM) */}
+      <div>
+        <button
+          type="button"
+          onClick={() => hasUtm && setSourceExpanded((v) => !v)}
+          disabled={!hasUtm}
+          className={`flex items-center justify-between w-full gap-2 text-left min-w-0 ${hasUtm ? 'cursor-pointer group' : 'cursor-default'}`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+              <Building2 size={15} className="text-gray-500" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[12px] text-gray-400">Source</div>
+              <div className="text-[14px] font-medium text-gray-900 truncate">{source}</div>
+            </div>
+          </div>
+          {hasUtm ? (
+            <ChevronDown
+              size={16}
+              className={`shrink-0 text-gray-300 group-hover:text-gray-500 transition-all duration-200 ${sourceExpanded ? 'rotate-180' : ''}`}
+            />
+          ) : null}
+        </button>
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-out ${sourceExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}
+        >
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+            {utmRows.map((row) => (
+              <div key={row.label} className="flex items-center justify-between gap-3">
+                <span className="text-[12px] text-gray-400 font-mono">{row.label}</span>
+                <span className={`text-[13px] text-right ${row.value ? 'text-gray-700 font-medium' : 'text-gray-300'}`}>
+                  {row.value || '—'}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
-        {!isClosed && editingField !== 'closeDate' && (
-          <button
-            onClick={() => setEditingField('closeDate')}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-all"
-          >
-            <PenLine size={13} />
-          </button>
-        )}
       </div>
     </div>
   )
@@ -1154,12 +1397,14 @@ function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  confirmButtonClassName = 'text-white bg-red-600 hover:bg-red-700',
   onConfirm,
   onCancel,
 }: {
   title: string
   message: string
   confirmLabel: string
+  confirmButtonClassName?: string
   onConfirm: () => void
   onCancel: () => void
 }) {
@@ -1187,7 +1432,7 @@ function ConfirmDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+            className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-colors ${confirmButtonClassName}`}
           >
             {confirmLabel}
           </button>
@@ -1301,20 +1546,31 @@ function getTileStyle(status: TaskStatus): string {
 
 function TasksCard({ dealId }: { dealId: string }) {
   const [expanded, setExpanded] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'Terminé' | null>(null)
-  const [typeFilter, setTypeFilter] = useState<TaskType | null>(null)
+  const [filterStatus, setFilterStatus] = useState<Set<string>>(new Set())
+  const [filterType, setFilterType] = useState<Set<string>>(new Set())
+
+  const toggleFilter = (prev: Set<string>, value: string): Set<string> => {
+    const next = new Set(prev)
+    next.has(value) ? next.delete(value) : next.add(value)
+    return next
+  }
 
   const dealTasks = useMemo(() => allTasks.filter((t) => t.dealId === dealId), [dealId])
 
   const filteredTasks = useMemo(() => {
     let result = dealTasks
-    if (statusFilter === 'pending') result = result.filter((t) => t.status !== 'Terminé')
-    else if (statusFilter === 'Terminé') result = result.filter((t) => t.status === 'Terminé')
-    if (typeFilter) result = result.filter((t) => t.type === typeFilter)
+    if (filterStatus.size > 0) {
+      result = result.filter((t) => {
+        const isValidated = t.status === 'Terminé'
+        const isPending = !isValidated
+        return (filterStatus.has('À traiter') && isPending) || (filterStatus.has('Validées') && isValidated)
+      })
+    }
+    if (filterType.size > 0) result = result.filter((t) => filterType.has(t.type))
     return result
-  }, [dealTasks, statusFilter, typeFilter])
+  }, [dealTasks, filterStatus, filterType])
 
-  const hasActiveFilter = statusFilter !== null || typeFilter !== null
+  const hasActiveFilter = filterStatus.size > 0 || filterType.size > 0
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-5">
@@ -1335,60 +1591,21 @@ function TasksCard({ dealId }: { dealId: string }) {
       </button>
       <div className={`overflow-hidden transition-all duration-200 ease-out ${expanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
         {/* Filters */}
-        <div className="mt-4 space-y-2">
-          {/* Status pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setStatusFilter(null)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                statusFilter === null
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              Toutes
-            </button>
-            {STATUS_FILTERS.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setStatusFilter(statusFilter === f.value ? null : f.value)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                  statusFilter === f.value
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Type pills */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setTypeFilter(null)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                typeFilter === null
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              Tous types
-            </button>
-            {TASK_TYPES.map((t) => (
-              <button
-                key={t}
-                onClick={() => setTypeFilter(typeFilter === t ? null : t)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                  typeFilter === t
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+        <div className="mt-4 flex items-center gap-2 flex-wrap">
+          <FilterDropdown
+            label="Toutes"
+            options={STATUS_FILTERS.map((f) => f.label)}
+            selected={filterStatus}
+            onToggle={(v) => setFilterStatus(toggleFilter(filterStatus, v))}
+            onClear={() => setFilterStatus(new Set())}
+          />
+          <FilterDropdown
+            label="Tous types"
+            options={TASK_TYPES}
+            selected={filterType}
+            onToggle={(v) => setFilterType(toggleFilter(filterType, v))}
+            onClear={() => setFilterType(new Set())}
+          />
         </div>
 
         {/* Task list */}
@@ -1477,11 +1694,13 @@ export function DealDetailsSidebar({
   onClose,
   onDissociateProjet,
   onAssociateProjets,
+  onStageChange,
 }: {
   deal: Deal
   onClose: () => void
   onDissociateProjet?: (projet: DealProjet) => void
   onAssociateProjets?: (projets: DealProjet[]) => void
+  onStageChange?: (newEtape: DealEtape, lossReason?: DealLossReason) => void
 }) {
   const [visible, setVisible] = useState(false)
   const [amountExpanded, setAmountExpanded] = useState(false)
@@ -1584,19 +1803,24 @@ export function DealDetailsSidebar({
           </div>
 
           {/* Stage progress */}
-          <SidebarStageProgress currentEtape={deal.etape} lastReachedEtape={deal.lastReachedEtape} stageHistory={deal.stageHistory} />
+          <DealStageProgressBar currentEtape={deal.etape} lastReachedEtape={deal.lastReachedEtape} />
         </div>
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto bg-[#faf8f5] p-5 space-y-4">
-          {/* Source card */}
-          <SourceCard source={deal.source} utm={deal.utm} />
+          <StageCard
+            etape={deal.etape}
+            stageHistory={deal.stageHistory}
+            onStageChange={onStageChange}
+          />
 
           {/* Key details card */}
           <KeyDetailsCard
             owner={deal.owner}
             priority={deal.priority}
             closedDate={deal.closedDate}
+            source={deal.source}
+            utm={deal.utm}
             isWon={isWon}
             isLost={isLost}
           />
@@ -1642,7 +1866,11 @@ function getAvailableProjetsForDeal(deal: Deal): DealProjet[] {
 const SANS_PROJET = 'Sans projet'
 
 function DealsTab() {
-  const [deals, setDeals] = useState<Deal[]>(() => clientProfile.deals)
+  const [deals, setDeals] = useState<Deal[]>(() => loadDeals(clientProfile.deals))
+
+  useEffect(() => {
+    saveDeals(deals)
+  }, [deals])
 
   const [sortKey, setSortKey] = useState<SortKey | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -1701,12 +1929,21 @@ function DealsTab() {
   return (
     <div className="space-y-6">
       {/* Filters bar */}
-      <div className="flex items-center gap-3">
-        <FilterDropdown label="Tous les types" options={types} selected={filterType} onToggle={(v) => setFilterType(toggleSet(filterType, v))} onClear={() => setFilterType(new Set())} />
-        <FilterDropdown label="Toutes les étapes" options={etapes} selected={filterEtape} onToggle={(v) => setFilterEtape(toggleSet(filterEtape, v))} onClear={() => setFilterEtape(new Set())} />
-        <FilterDropdown label="Tous les projets" options={projets} bottomOptions={[SANS_PROJET]} selected={filterProjet} onToggle={(v) => setFilterProjet(toggleSet(filterProjet, v))} onClear={() => setFilterProjet(new Set())} />
-        <FilterDropdown label="Tous les owners" options={owners} selected={filterOwner} onToggle={(v) => setFilterOwner(toggleSet(filterOwner, v))} onClear={() => setFilterOwner(new Set())} />
-        <FilterDropdown label="Toutes les sources" options={sources} selected={filterSource} onToggle={(v) => setFilterSource(toggleSet(filterSource, v))} onClear={() => setFilterSource(new Set())} />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <FilterDropdown label="Tous les types" options={types} selected={filterType} onToggle={(v) => setFilterType(toggleSet(filterType, v))} onClear={() => setFilterType(new Set())} />
+          <FilterDropdown label="Toutes les étapes" options={etapes} selected={filterEtape} onToggle={(v) => setFilterEtape(toggleSet(filterEtape, v))} onClear={() => setFilterEtape(new Set())} />
+          <FilterDropdown label="Tous les projets" options={projets} bottomOptions={[SANS_PROJET]} selected={filterProjet} onToggle={(v) => setFilterProjet(toggleSet(filterProjet, v))} onClear={() => setFilterProjet(new Set())} />
+          <FilterDropdown label="Tous les owners" options={owners} selected={filterOwner} onToggle={(v) => setFilterOwner(toggleSet(filterOwner, v))} onClear={() => setFilterOwner(new Set())} />
+          <FilterDropdown label="Toutes les sources" options={sources} selected={filterSource} onToggle={(v) => setFilterSource(toggleSet(filterSource, v))} onClear={() => setFilterSource(new Set())} />
+        </div>
+        <button
+          type="button"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-semibold hover:opacity-90"
+          style={{ backgroundColor: '#0E1111' }}
+        >
+          Créer une opportunité
+        </button>
       </div>
 
       {/* Deals table */}
@@ -1794,6 +2031,11 @@ function DealsTab() {
           }}
           onAssociateProjets={(projets) => {
             const updated = addProjetsToDeal(selectedDeal, projets)
+            setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+            setSelectedDeal(updated)
+          }}
+          onStageChange={(newEtape, lossReason) => {
+            const updated = applyStageChange(selectedDeal, newEtape, lossReason, selectedDeal.owner)
             setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
             setSelectedDeal(updated)
           }}

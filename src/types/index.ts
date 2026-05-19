@@ -74,6 +74,8 @@ export type DealType = 'New Biz' | 'Cross-Sell' | 'Upsell'
 export type DealSource = 'Direct' | 'Paid Search' | 'Organic Search' | 'AI Referral'
 export type DealEtape = 'Nouvelle' | 'Contacté / RDV pris' | 'Qualifié' | 'Signé / Souscrit' | 'Gagnée' | 'Perdue'
 
+export type DealLossReason = 'Inactivité' | 'Non éligible' | 'Pas intéressé' | 'Trop cher'
+
 export interface DealProjet {
   projetId: string
   projetName: string
@@ -85,6 +87,10 @@ export interface DealProjet {
 export interface DealStageEntry {
   etape: DealEtape
   enteredAt: string
+  /** Omit or `auto` for system transitions; `manual` when changed in Key details. */
+  source?: 'auto' | 'manual'
+  /** Display name when `source` is `manual` (e.g. deal owner). */
+  changedBy?: string
 }
 
 export interface DealAmountEntry {
@@ -117,6 +123,8 @@ export interface Deal {
   stageHistory: DealStageEntry[]
   amountHistory: DealAmountEntry[]
   utm: DealUtm
+  /** Set when etape is Perdue (loss reason from close modal). */
+  lossReason?: DealLossReason
 }
 
 export type ContractStatus = 'Ouvert' | 'Clôturé'
