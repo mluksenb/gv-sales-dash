@@ -1801,58 +1801,63 @@ function TasksCard({ dealId }: { dealId: string }) {
               return (
                 <div
                   key={task.id}
-                  className={`group/task relative w-full px-4 py-3 rounded-xl border ${getTileStyle(task.status)}`}
+                  className={`group/task flex gap-3 items-start w-full px-4 py-3 rounded-xl border ${getTileStyle(task.status)}`}
                 >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start gap-2 mb-2">
+                      <span className="text-[13px] font-semibold text-gray-900 min-w-0">{task.type}</span>
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
+                        title={task.conseiller}
+                        aria-label={task.conseiller}
+                      >
+                        {getOwnerInitials(task.conseiller)}
+                      </div>
+                      {isDone && completedLabel ? (
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="text-[12px] text-gray-400 truncate">Validée le {completedLabel}</span>
+                          <SLAIndicator minutes={task.slaMinutes} size="sm" />
+                        </div>
+                      ) : (
+                        <span className="text-[12px] text-gray-400 truncate">Échéance : {dueLabel}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hover actions — column before badge; centred vertically without reserving width when hidden */}
+                  <div className="relative w-0 shrink-0 self-stretch overflow-visible">
+                    <div className="absolute right-0 top-1/2 z-20 -translate-y-1/2 inline-flex items-center gap-0.5 bg-gray-100 rounded-lg p-1 opacity-0 shadow-sm transition-opacity group-hover/task:opacity-100">
+                      {isDone ? (
+                        <button
+                          title="Rouvrir la tâche"
+                          className="p-1.5 rounded-md hover:bg-amber-100 text-amber-500 hover:text-amber-600 transition-colors"
+                        >
+                          <RotateCcw size={15} strokeWidth={2.5} />
+                        </button>
+                      ) : (
+                        <button
+                          title="Marquer traité"
+                          className="p-1.5 rounded-md hover:bg-green-100 text-green-500 hover:text-green-600 transition-colors"
+                        >
+                          <Check size={15} strokeWidth={2.5} />
+                        </button>
+                      )}
+                      <button
+                        title="Supprimer"
+                        className="p-1.5 rounded-md hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <X size={15} strokeWidth={2.2} />
+                      </button>
+                    </div>
+                  </div>
+
                   <span
-                    className={`absolute top-3 right-3 z-10 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0 ${STATUS_BADGE_STYLES[task.status]}`}
+                    className={`shrink-0 inline-flex items-center self-start px-2 py-0.5 rounded-full text-[11px] font-medium border ${STATUS_BADGE_STYLES[task.status]}`}
                   >
                     {task.status === 'Terminé' ? 'Validée' : task.status}
                   </span>
-                  <div className="flex items-start gap-2 mb-2 pr-[5.5rem]">
-                    <span className="text-[13px] font-semibold text-gray-900 min-w-0">{task.type}</span>
-                  </div>
-                  <div className="flex items-center gap-2 min-w-0 pr-[5.5rem]">
-                    <div
-                      className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
-                      title={task.conseiller}
-                      aria-label={task.conseiller}
-                    >
-                      {getOwnerInitials(task.conseiller)}
-                    </div>
-                    {isDone && completedLabel ? (
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="text-[12px] text-gray-400 truncate">Validée le {completedLabel}</span>
-                        <SLAIndicator minutes={task.slaMinutes} size="sm" />
-                      </div>
-                    ) : (
-                      <span className="text-[12px] text-gray-400 truncate">Échéance : {dueLabel}</span>
-                    )}
-                  </div>
-
-                  {/* Hover toolbox — under status pill, top-right */}
-                  <div className="absolute top-10 right-2.5 z-20 inline-flex items-center gap-0.5 bg-gray-100 rounded-lg p-1 opacity-0 group-hover/task:opacity-100 transition-opacity shadow-sm">
-                    {isDone ? (
-                      <button
-                        title="Rouvrir la tâche"
-                        className="p-1.5 rounded-md hover:bg-amber-100 text-amber-500 hover:text-amber-600 transition-colors"
-                      >
-                        <RotateCcw size={15} strokeWidth={2.5} />
-                      </button>
-                    ) : (
-                      <button
-                        title="Marquer traité"
-                        className="p-1.5 rounded-md hover:bg-green-100 text-green-500 hover:text-green-600 transition-colors"
-                      >
-                        <Check size={15} strokeWidth={2.5} />
-                      </button>
-                    )}
-                    <button
-                      title="Supprimer"
-                      className="p-1.5 rounded-md hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <X size={15} strokeWidth={2.2} />
-                    </button>
-                  </div>
                 </div>
               )
             })
