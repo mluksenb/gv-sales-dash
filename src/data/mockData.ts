@@ -719,10 +719,7 @@ export const clientProfile: ClientProfile = {
       priority: 'high',
       montant: 20_000,
       etape: 'Contacté / RDV pris',
-      projets: [
-        { projetId: 'proj-1', projetName: 'Assurance-vie', provider: 'Spirica', status: 'Ouvert', creationDate: '20 jan. 2026' },
-        { projetId: 'proj-2', projetName: 'Assurance-vie', provider: 'Spirica', status: 'Ouvert', creationDate: '20 jan. 2026' },
-      ],
+      projets: [],
       closedDate: null,
       lastReachedEtape: null,
       stageHistory: [

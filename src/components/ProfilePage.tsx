@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame } from 'lucide-react'
+import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame, Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parse, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -437,6 +437,10 @@ function SortHeader({
 
 function ProjetCell({ projets }: { projets: DealProjet[] }) {
   const [open, setOpen] = useState(false)
+
+  if (projets.length === 0) {
+    return null
+  }
 
   if (projets.length === 1) {
     return (
@@ -886,12 +890,270 @@ function KeyDetailsCard({ owner, priority, closedDate, isWon, isLost }: { owner:
   )
 }
 
-function ProjetsCard({ projets }: { projets: DealProjet[] }) {
-  const [expanded, setExpanded] = useState(true)
+function projetKey(p: DealProjet): string {
+  return p.projetId || p.projetName
+}
+
+function clientProjectToDealProjet(project: ClientProject): DealProjet {
+  return {
+    projetId: project.id,
+    projetName: project.productName,
+    provider: project.provider,
+    status: project.status,
+    creationDate: project.souscriptionDate,
+  }
+}
+
+function formatAjouterProjetsLabel(count: number): string {
+  if (count === 0) return 'Ajouter'
+  const noun = count === 1 ? 'projet' : 'projets'
+  return `Ajouter ${count} ${noun}`
+}
+
+function ProjetTile({
+  projet,
+  selected = false,
+  selectable = false,
+  onToggleSelect,
+  onDissociate,
+}: {
+  projet: DealProjet
+  selected?: boolean
+  selectable?: boolean
+  onToggleSelect?: () => void
+  onDissociate?: () => void
+}) {
+  const className = `w-full px-4 py-3 rounded-xl border text-left transition-colors ${
+    selected
+      ? 'border-emerald-300 bg-emerald-50/60 ring-2 ring-emerald-200/80'
+      : 'border-gray-100 bg-gray-50/50'
+  } ${selectable ? 'cursor-pointer hover:border-emerald-200 hover:bg-emerald-50/30' : ''}`
+
+  const content = (
+    <>
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className="text-[13px] font-semibold text-gray-900">{projet.projetName}</span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+            projet.status === 'Ouvert'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-gray-100 text-gray-500 border-gray-300'
+          }`}>
+            {projet.status}
+          </span>
+          {onDissociate && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDissociate()
+              }}
+              className="w-6 h-6 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 transition-colors"
+              aria-label={`Dissocier ${projet.projetName}`}
+            >
+              <X size={14} />
+            </button>
+          )}
+          {selectable && selected && (
+            <span className="w-6 h-6 rounded-md flex items-center justify-center text-emerald-600">
+              <Check size={14} strokeWidth={2.5} />
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-200">
+          {projet.provider}
+        </span>
+        <span className="text-[12px] text-gray-400">Créé le {projet.creationDate}</span>
+      </div>
+    </>
+  )
+
+  if (selectable) {
+    return (
+      <button type="button" onClick={onToggleSelect} className={className}>
+        {content}
+      </button>
+    )
+  }
+
+  return <div className={className}>{content}</div>
+}
+
+function AssociateProjetsModal({
+  availableProjets,
+  onConfirm,
+  onClose,
+}: {
+  availableProjets: DealProjet[]
+  onConfirm: (projets: DealProjet[]) => void
+  onClose: () => void
+}) {
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
+
+  const toggleProjet = (projet: DealProjet) => {
+    const key = projetKey(projet)
+    setSelectedKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const selectedCount = selectedKeys.size
+  const selectedProjets = availableProjets.filter((p) => selectedKeys.has(projetKey(p)))
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5">
-      <button
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/20" onClick={onClose} aria-hidden />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="associate-projets-title"
+        className="relative w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-xl flex flex-col max-h-[min(85vh,640px)]"
+      >
+        <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-4 border-b border-gray-100 shrink-0">
+          <h3 id="associate-projets-title" className="text-[15px] font-semibold text-gray-900">
+            Associer des projets
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+            aria-label="Fermer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 min-h-0">
+          {availableProjets.length === 0 ? (
+            <p className="text-[13px] text-gray-400">Tous les projets du client sont déjà associés à ce deal.</p>
+          ) : (
+            availableProjets.map((p) => (
+              <ProjetTile
+                key={projetKey(p)}
+                projet={p}
+                selectable
+                selected={selectedKeys.has(projetKey(p))}
+                onToggleSelect={() => toggleProjet(p)}
+              />
+            ))
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={selectedCount === 0 || availableProjets.length === 0}
+            onClick={() => onConfirm(selectedProjets)}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+          >
+            {formatAjouterProjetsLabel(selectedCount)}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  onConfirm,
+  onCancel,
+}: {
+  title: string
+  message: string
+  confirmLabel: string
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/20" onClick={onCancel} aria-hidden />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        className="relative w-full max-w-md bg-white rounded-2xl border border-gray-100 shadow-xl p-6"
+      >
+        <h3 id="confirm-dialog-title" className="text-[15px] font-semibold text-gray-900 mb-2">
+          {title}
+        </h3>
+        <p className="text-[13px] text-gray-500 leading-relaxed mb-6">{message}</p>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ProjetsCard({
+  projets,
+  availableProjets,
+  onDissociateProjet,
+  onAssociateProjets,
+}: {
+  projets: DealProjet[]
+  availableProjets: DealProjet[]
+  onDissociateProjet?: (projet: DealProjet) => void
+  onAssociateProjets?: (projets: DealProjet[]) => void
+}) {
+  const [expanded, setExpanded] = useState(true)
+  const [pendingDissociate, setPendingDissociate] = useState<DealProjet | null>(null)
+  const [associateOpen, setAssociateOpen] = useState(false)
+
+  return (
+    <>
+      {pendingDissociate && onDissociateProjet && (
+        <ConfirmDialog
+          title="Dissocier ce projet ?"
+          message={`Le projet « ${pendingDissociate.projetName} » ne sera plus lié à ce deal.`}
+          confirmLabel="Dissocier"
+          onCancel={() => setPendingDissociate(null)}
+          onConfirm={() => {
+            onDissociateProjet(pendingDissociate)
+            setPendingDissociate(null)
+          }}
+        />
+      )}
+      {associateOpen && onAssociateProjets && (
+        <AssociateProjetsModal
+          availableProjets={availableProjets}
+          onClose={() => setAssociateOpen(false)}
+          onConfirm={(selected) => {
+            onAssociateProjets(selected)
+            setAssociateOpen(false)
+          }}
+        />
+      )}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <button
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center justify-between w-full cursor-pointer group"
       >
@@ -908,32 +1170,31 @@ function ProjetsCard({ projets }: { projets: DealProjet[] }) {
       </button>
       <div className={`overflow-hidden transition-all duration-200 ease-out ${expanded ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
         <div className="mt-4 space-y-2">
-          {projets.map((p) => (
-            <div
-              key={p.projetId || p.projetName}
-              className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50/50"
+          {projets.length === 0 ? (
+            <p className="text-[13px] text-gray-400 px-1">Aucun projet lié à ce deal.</p>
+          ) : (
+            projets.map((p) => (
+              <ProjetTile
+                key={projetKey(p)}
+                projet={p}
+                onDissociate={onDissociateProjet ? () => setPendingDissociate(p) : undefined}
+              />
+            ))
+          )}
+          {onAssociateProjets && (
+            <button
+              type="button"
+              onClick={() => setAssociateOpen(true)}
+              className="flex items-center gap-1.5 px-1 py-1.5 text-[13px] font-medium text-gray-500 hover:text-emerald-700 transition-colors"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[13px] font-semibold text-gray-900">{p.projetName}</span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                  p.status === 'Ouvert'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-gray-100 text-gray-500 border-gray-300'
-                }`}>
-                  {p.status}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 text-orange-700 border border-orange-200">
-                  {p.provider}
-                </span>
-                <span className="text-[12px] text-gray-400">Créé le {p.creationDate}</span>
-              </div>
-            </div>
-          ))}
+              <Plus size={14} className="shrink-0" />
+              Associer un projet
+            </button>
+          )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
@@ -1127,7 +1388,17 @@ function TasksCard({ dealId }: { dealId: string }) {
   )
 }
 
-export function DealDetailsSidebar({ deal, onClose }: { deal: Deal; onClose: () => void }) {
+export function DealDetailsSidebar({
+  deal,
+  onClose,
+  onDissociateProjet,
+  onAssociateProjets,
+}: {
+  deal: Deal
+  onClose: () => void
+  onDissociateProjet?: (projet: DealProjet) => void
+  onAssociateProjets?: (projets: DealProjet[]) => void
+}) {
   const [visible, setVisible] = useState(false)
   const [amountExpanded, setAmountExpanded] = useState(false)
 
@@ -1246,7 +1517,12 @@ export function DealDetailsSidebar({ deal, onClose }: { deal: Deal; onClose: () 
           />
 
           {/* Projets card */}
-          <ProjetsCard projets={deal.projets} />
+          <ProjetsCard
+            projets={deal.projets}
+            availableProjets={getAvailableProjetsForDeal(deal)}
+            onDissociateProjet={onDissociateProjet}
+            onAssociateProjets={onAssociateProjets}
+          />
 
           {/* Tasks card */}
           <TasksCard dealId={deal.dealId} />
@@ -1257,8 +1533,29 @@ export function DealDetailsSidebar({ deal, onClose }: { deal: Deal; onClose: () 
   )
 }
 
+function removeProjetFromDeal(deal: Deal, projet: DealProjet): Deal {
+  const key = projetKey(projet)
+  return {
+    ...deal,
+    projets: deal.projets.filter((p) => projetKey(p) !== key),
+  }
+}
+
+function addProjetsToDeal(deal: Deal, projets: DealProjet[]): Deal {
+  const linkedKeys = new Set(deal.projets.map(projetKey))
+  const toAdd = projets.filter((p) => !linkedKeys.has(projetKey(p)))
+  return { ...deal, projets: [...deal.projets, ...toAdd] }
+}
+
+function getAvailableProjetsForDeal(deal: Deal): DealProjet[] {
+  const linkedKeys = new Set(deal.projets.map(projetKey))
+  return clientProfile.projects
+    .filter((p) => !linkedKeys.has(p.id))
+    .map(clientProjectToDealProjet)
+}
+
 function DealsTab() {
-  const { deals } = clientProfile
+  const [deals, setDeals] = useState<Deal[]>(() => clientProfile.deals)
 
   const [sortKey, setSortKey] = useState<SortKey | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -1385,7 +1682,20 @@ function DealsTab() {
 
       {/* Deal details sidebar */}
       {selectedDeal && (
-        <DealDetailsSidebar deal={selectedDeal} onClose={() => setSelectedDeal(null)} />
+        <DealDetailsSidebar
+          deal={selectedDeal}
+          onClose={() => setSelectedDeal(null)}
+          onDissociateProjet={(projet) => {
+            const updated = removeProjetFromDeal(selectedDeal, projet)
+            setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+            setSelectedDeal(updated)
+          }}
+          onAssociateProjets={(projets) => {
+            const updated = addProjetsToDeal(selectedDeal, projets)
+            setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+            setSelectedDeal(updated)
+          }}
+        />
       )}
     </div>
   )

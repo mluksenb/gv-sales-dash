@@ -18,7 +18,8 @@ Un **deal** (opportunité commerciale) est une démarche de collecte ou de vente
 
 1. Consulter **toutes les opportunités** du client dans un tableau filtrable et triable.
 2. Ouvrir le **détail d’un deal** dans un panneau latéral, sans quitter la fiche.
-3. Y voir l’**historique d’étapes**, le **montant**, la **source marketing**, les **projets liés** et les **tâches** associées.
+3. Y voir l’**historique d’étapes**, le **montant**, la **priorité**, la **source marketing**, les **projets liés** (éventuellement aucun) et les **tâches** associées.
+4. **Associer ou dissocier** des projets du client au deal, tant que celui-ci n’est pas gagné ni perdu.
 
 Le même panneau de détail doit pouvoir être ouvert depuis le **Dashboard Conseiller** lorsqu’une tâche est liée à un deal (cf. § 6).
 
@@ -55,9 +56,10 @@ Chaque opportunité est un enregistrement **Deal** rattaché au client dont on c
 | `type`              | `New Biz` \| `Cross-Sell` \| `Upsell`                                          | Type commercial                                                             |
 | `source`            | `Direct` \| `Paid Search` \| `Organic Search` \| `AI Referral`                 | Canal d’acquisition (liste à valider côté métier si besoin)                   |
 | `owner`             | string (référence conseiller)                                                  | Conseiller responsable du deal                                              |
+| `priority`          | `normal` \| `medium` \| `high`                                                 | Niveau de priorité du deal (cf. § 3.6)                                      |
 | `montant`           | number (€)                                                                     | Montant actuel                                                              |
 | `etape`             | cf. § 7                                                                        | Étape courante du pipeline                                                  |
-| `projets`           | `DealProjet[]`                                                                 | Projets liés au deal                                                        |
+| `projets`           | `DealProjet[]` (peut être vide)                                                | Projets liés au deal — association optionnelle (cf. § 3.2, § 5.5.3)         |
 | `closedDate`        | date \| null                                                                   | Date de clôture ; `null` tant que le deal n’est pas clôturé                 |
 | `lastReachedEtape`  | étape pipeline \| null                                                         | Dernière étape atteinte avant passage en **Perdue** (obligatoire si Perdue) |
 | `stageHistory`      | `DealStageEntry[]`                                                             | Historique chronologique des étapes                                         |
@@ -65,8 +67,11 @@ Chaque opportunité est un enregistrement **Deal** rattaché au client dont on c
 | `utm`               | objet UTM                                                                      | Paramètres de tracking (tous nullable)                                      |
 
 
-### 3.2 Projet lié (`DealProjet`)
+### 3.2 Projets liés (`DealProjet`)
 
+Un deal peut être lié à **zéro, un ou plusieurs** projets du client. L’absence de projet est un cas métier valide (ex. rendez-vous pris sans parcours en ligne ayant créé un projet produit).
+
+La liste des projets **éligibles à l’association** est constituée des projets du client qui ne sont pas déjà liés à ce deal.
 
 | Champ           | Type / valeurs        | Description                         |
 | --------------- | --------------------- | ----------------------------------- |
@@ -106,7 +111,22 @@ Chaque opportunité est un enregistrement **Deal** rattaché au client dont on c
 | `utmContent`   | string \| null |
 
 
-### 3.6 Lien tâche ↔ deal
+### 3.6 Niveau de priorité (`DealPriority`)
+
+Chaque deal possède un niveau de priorité, modifiable par le conseiller (cf. § 5.5.2).
+
+
+| Valeur technique | Libellé affiché |
+| ---------------- | ---------------- |
+| `normal`         | Normal           |
+| `medium`         | Élevé            |
+| `high`           | Maximum          |
+
+
+- Valeur par défaut attendue pour un nouveau deal : `normal` (à confirmer côté métier / back-end).
+- La priorité est propre au deal : deux deals du même client peuvent avoir des niveaux différents.
+
+### 3.7 Lien tâche ↔ deal
 
 Les tâches de type **Demande de rappel** et **Drop** peuvent référencer un deal (`dealId`, montant, étape, projet(s) associés). Ce lien permet d’ouvrir le panneau de détail du deal concerné (cf. § 6).
 
@@ -142,6 +162,7 @@ Quatre filtres en **multi-sélection** (menus déroulants ou équivalent UI du b
 | Création   | Oui     | Date de création du deal                                                |
 | Type       | Oui     | Type commercial (New Biz, Cross-Sell, Upsell)                           |
 | Projet     | Oui     | Voir § 4.4                                                              |
+| Prio       | Oui     | Indicateur de priorité (cf. § 4.6) ; pas d’indicateur si **Normal**       |
 | Montant    | Oui     | Montant actuel en euros ; traitement visuel distinct si étape **Perdue** |
 | Étape      | Oui     | Représentation compacte de la progression dans le pipeline (cf. § 7)    |
 | Statut     | Non     | Libellé de l’étape courante                                             |
@@ -158,13 +179,15 @@ Quatre filtres en **multi-sélection** (menus déroulants ou équivalent UI du b
 - Règles particulières :
   - **Montant** : tri numérique.
   - **Close Date** : les valeurs vides en fin de liste en tri ascendant.
-  - **Projet** : tri sur le nom du **premier** projet lié.
+  - **Projet** : tri sur le nom du **premier** projet lié ; deals sans projet groupés selon la convention de tri du back-office (ex. en fin de liste).
+  - **Prio** : tri selon l’ordre métier Normal → Élevé → Maximum (valeurs `normal`, puis `medium`, puis `high`).
 
 ### 4.4 Cellule Projet
 
 
 | Cas                    | Comportement                                                                 |
 | ---------------------- | ---------------------------------------------------------------------------- |
+| Aucun projet lié       | Cellule vide (pas de libellé placeholder obligatoire)                        |
 | Un seul projet lié     | Afficher le nom du projet ; action possible vers la fiche projet si le produit le prévoit |
 | Plusieurs projets liés | Afficher un libellé du type « N projets » ; permettre de lister tous les noms (popover, menu, etc.) |
 
@@ -174,6 +197,16 @@ Quatre filtres en **multi-sélection** (menus déroulants ou équivalent UI du b
 - Clic sur une ligne : ouvre le panneau latéral de détail pour ce deal.
 - La ligne du deal ouvert doit être identifiable (état sélectionné).
 - Aucun résultat après filtrage : message explicite du type « Aucun deal ne correspond aux filtres sélectionnés ».
+
+### 4.6 Colonne Priorité (Prio)
+
+| Niveau    | Affichage dans le tableau                                      |
+| --------- | -------------------------------------------------------------- |
+| Normal    | Aucun indicateur (cellule vide ou équivalent discret)          |
+| Élevé     | Indicateur visuel de priorité intermédiaire                    |
+| Maximum   | Indicateur visuel de priorité la plus haute (plus marqué qu’Élevé) |
+
+Le libellé textuel (Normal / Élevé / Maximum) n’est pas requis dans le tableau : l’indicateur doit permettre de distinguer rapidement les deals prioritaires. Le libellé complet est affiché dans le panneau de détail.
 
 ---
 
@@ -242,25 +275,54 @@ Le corps du panneau défile indépendamment de l’en-tête. Contenu organisé e
 
 #### 5.5.2 Carte Détails clés
 
-Deux champs **modifiables** par le conseiller (persistance côté serveur) :
+Trois champs dans cette carte. **Owner** et **Niveau de priorité** sont modifiables par le conseiller (persistance côté serveur). **Close date** est modifiable uniquement tant que le deal n’est pas terminé (cf. ci-dessous).
 
 **Owner**
 
 - Affichage du conseiller actuel.
 - Édition : sélection dans la liste des conseillers éligibles, avec recherche/filtrage si la liste est longue.
 
+**Niveau de priorité**
+
+- Libellé « Niveau de priorité ».
+- Affichage du libellé courant : Normal, Élevé ou Maximum (cf. § 3.6).
+- Édition : sélection parmi les trois niveaux (liste ou menu déroulant).
+- La modification doit être reflétée immédiatement dans le tableau si celui-ci est visible derrière le panneau.
+
 **Close date**
 
 - Libellé du type « Close date ».
 - Affichage de la date de clôture ou d’un libellé « Non définie » si `closedDate` est null.
-- Édition : sélecteur de date.
+- **Lecture seule** si le deal est à l’étape **Gagnée** ou **Perdue** : la date reste visible mais l’action d’édition (crayon, champ date, etc.) ne doit pas être proposée.
+- **Édition** autorisée uniquement pour les deals encore en cours dans le pipeline (étapes autres que Gagnée et Perdue) : sélecteur de date, persistance côté serveur.
 
 #### 5.5.3 Carte Projets liés
 
-- Titre avec le **nombre** de projets liés.
+- Titre avec le **nombre** de projets actuellement liés (0 inclus).
 - Section repliable.
-- Pour chaque projet : nom, statut (Ouvert / Clôturé), fournisseur, date de création.
+
+**Affichage (tous états)**
+
+- Si aucun projet lié : message explicite du type « Aucun projet lié à ce deal ».
+- Pour chaque projet lié : nom, statut (Ouvert / Clôturé), fournisseur, date de création.
 - Lien ou navigation vers la fiche projet si le back-office le prévoit déjà ailleurs.
+
+**Édition des associations** — uniquement si `etape` ∉ { **Gagnée**, **Perdue** }
+
+| Action              | Comportement                                                                 |
+| ------------------- | ---------------------------------------------------------------------------- |
+| **Associer**        | Action du type « Associer un projet » ouvrant une sélection parmi les projets du client **non encore** liés à ce deal. Sélection **multiple** possible en une fois. Confirmation ajoute le ou les projets à `projets`. |
+| **Dissocier**       | Action par projet lié ; **confirmation** avant retrait (ex. « Le projet X ne sera plus lié à ce deal »). Retire le projet de `projets` sans supprimer le projet côté client. |
+
+Cas limites côté association :
+
+- Tous les projets du client sont déjà liés à ce deal : message du type « Tous les projets du client sont déjà associés à ce deal » ; aucune association supplémentaire possible tant qu’un projet n’est pas dissocié ou qu’un nouveau projet client n’existe pas.
+
+**Lecture seule** — si `etape` ∈ { **Gagnée**, **Perdue** }
+
+- Liste des projets liés inchangée (y compris liste vide).
+- Aucune action **Associer** ni **Dissocier** ; pas de dialogue de confirmation d’association/dissociation.
+- Même règle que pour la close date (§ 5.5.2) : le deal terminé fige les liens projet ↔ deal.
 
 #### 5.5.4 Carte Tâches
 
@@ -315,15 +377,22 @@ Pipeline principal (dans l’ordre) :
 
 Les transitions d’étape et l’alimentation de `stageHistory` / `amountHistory` sont gérées par le back-end (hors édition manuelle dans ce panneau).
 
-### 7.2 Affichage — Deal Perdue (règles fonctionnelles)
+### 7.2 Deals terminés — Gagnée ou Perdue (règles fonctionnelles)
 
+Pour `etape` = **Gagnée** ou **Perdue**, les champs et associations suivants passent en **lecture seule** dans le panneau :
+
+- Close date (§ 5.5.2)
+- Associations projet ↔ deal (§ 5.5.3)
+
+Owner et niveau de priorité restent modifiables sauf règle métier contraire à préciser côté produit.
 
 | Zone              | Comportement attendu                                                |
 | ----------------- | ------------------------------------------------------------------- |
 | Montant (tableau) | Distinction visuelle par rapport aux deals actifs                     |
 | Montant (panneau) | Montant non présenté comme un objectif actif (ex. barré / atténué) |
-| Barre progression | Progression figée au niveau de `lastReachedEtape`                  |
-| Étape affichée    | **Perdue** dans le statut et l’historique                           |
+| Barre progression | Progression figée au niveau de `lastReachedEtape` (Perdue) ou complète (Gagnée) |
+| Étape affichée    | **Gagnée** ou **Perdue** dans le statut et l’historique             |
+| Projets liés      | Liste visible ; pas d’association ni de dissociation                  |
 
 ### 7.3 Représentation de la progression (tableau)
 
@@ -343,7 +412,10 @@ Les transitions d’étape et l’alimentation de `stageHistory` / `amountHistor
 | Détail deal                    | Données complètes pour le panneau (incl. historiques, UTM, projets)                  |
 | Filtres / tri tableau          | Côté client sur la liste chargée, ou côté serveur si volume important                |
 | Modification owner             | Mise à jour persistée ; rafraîchissement tableau + panneau                           |
-| Modification close date        | Idem                                                                                 |
+| Modification priorité          | Idem                                                                                 |
+| Modification close date        | Uniquement si `etape` ∉ { Gagnée, Perdue } ; sinon champ en lecture seule            |
+| Association projet(s) au deal  | Uniquement si `etape` ∉ { Gagnée, Perdue } ; persistance + rafraîchissement panneau et tableau |
+| Dissociation projet du deal    | Idem ; ne supprime pas le projet client, retire uniquement le lien                    |
 | Historiques étape / montant    | Lecture seule ; alimentés par les transitions métier                                 |
 | Tâches dans le panneau         | Même API / règles que le dashboard ; actions traiter / rouvrir / supprimer synchronisées |
 | Rafraîchissement               | Après action ou changement métier, les vues liste et panneau reflètent l’état à jour sans rechargement complet de page si possible |
