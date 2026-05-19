@@ -1,5 +1,30 @@
 import type { Deal, DealCloseDateEntry, DealStageEntry } from '../types'
 
+/** Ancien libellé d'étape — renommé en « Signé » ; conservé pour migration du stockage local. */
+const LEGACY_ETAPE_SIGNÉ_SOUSCRIT = 'Signé / Souscrit'
+
+function migrateRenamedDealStages(deal: Deal): Deal {
+  /** Valeurs potentiellement présentes dans le JSON avant alignement sur `DealEtape`. */
+  const etapeRaw = deal.etape as string
+  const lastReachedRaw = deal.lastReachedEtape as string | null | undefined
+  const touches =
+    etapeRaw === LEGACY_ETAPE_SIGNÉ_SOUSCRIT ||
+    lastReachedRaw === LEGACY_ETAPE_SIGNÉ_SOUSCRIT ||
+    deal.stageHistory?.some((h) => (h.etape as string) === LEGACY_ETAPE_SIGNÉ_SOUSCRIT)
+  if (!touches) return deal
+
+  return {
+    ...deal,
+    etape: etapeRaw === LEGACY_ETAPE_SIGNÉ_SOUSCRIT ? 'Signé' : deal.etape,
+    lastReachedEtape:
+      lastReachedRaw === LEGACY_ETAPE_SIGNÉ_SOUSCRIT ? 'Signé' : deal.lastReachedEtape,
+    stageHistory:
+      deal.stageHistory?.map((h) =>
+        (h.etape as string) === LEGACY_ETAPE_SIGNÉ_SOUSCRIT ? { ...h, etape: 'Signé' } : h,
+      ) ?? deal.stageHistory,
+  }
+}
+
 /** Ancienne persistance sans enrichissement automatique depuis les mocks à jour */
 const LEGACY_STORAGE_KEY = 'goodvest-proto-deals'
 
@@ -66,10 +91,9 @@ export function loadDeals(fallback: Deal[]): Deal[] {
 
     const fallbackById = new Map(fallback.map((d) => [d.id, d]))
     const merged = parsed.map((stored) => {
-      const fb = fallbackById.get(stored.id)
-      if (!fb) return stored
-
-      let next: Deal = stored
+      let next: Deal = migrateRenamedDealStages(stored)
+      const fb = fallbackById.get(next.id)
+      if (!fb) return next
 
       // Anciennes persistance sans ce champ : reprendre les rendez-vous des mocks
       if (!Array.isArray(stored.rendezVous)) {

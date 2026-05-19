@@ -142,7 +142,7 @@ Cinq filtres en **multi-sélection** (menus déroulants ou équivalent UI du bac
 | Dimension | Libellé par défaut (indicatif) | Valeurs                                                                 |
 | --------- | ------------------------------ | ----------------------------------------------------------------------- |
 | Type      | Tous les types                 | New Biz, Cross-Sell, Upsell                                             |
-| Étape     | Toutes les étapes              | Nouvelle, Contacté / RDV pris, Qualifié, Signé / Souscrit, Gagnée, Perdue |
+| Étape     | Toutes les étapes              | Nouvelle, Contacté / RDV pris, Qualifié, Signé, Gagnée, Perdue |
 | Projet    | Tous les projets               | Noms de projet distincts présents sur les projets associés aux deals du client (ex. Assurance-vie, PER Individuel) ; option **Sans projet** en bas de liste pour les deals sans projet associé |
 | Owner     | Tous les owners                | Conseillers distincts présents comme owner sur les deals du client      |
 | Source    | Toutes les sources             | Valeurs distinctes présentes dans les deals du client                   |
@@ -397,7 +397,7 @@ Pipeline principal (dans l’ordre) :
 1. Nouvelle  
 2. Contacté / RDV pris  
 3. Qualifié  
-4. Signé / Souscrit  
+4. Signé  
 5. Gagnée  
 
 Étape terminale négative :

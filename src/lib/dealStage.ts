@@ -10,7 +10,7 @@ const OPEN_PIPELINE: DealEtape[] = [
   'Nouvelle',
   'Contacté / RDV pris',
   'Qualifié',
-  'Signé / Souscrit',
+  'Signé',
 ]
 
 function isTerminal(etape: DealEtape): boolean {

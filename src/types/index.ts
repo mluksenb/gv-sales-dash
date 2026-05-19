@@ -72,7 +72,7 @@ export type Task =
 
 export type DealType = 'New Biz' | 'Cross-Sell' | 'Upsell'
 export type DealSource = 'Direct' | 'Paid Search' | 'Organic Search' | 'AI Referral'
-export type DealEtape = 'Nouvelle' | 'Contacté / RDV pris' | 'Qualifié' | 'Signé / Souscrit' | 'Gagnée' | 'Perdue'
+export type DealEtape = 'Nouvelle' | 'Contacté / RDV pris' | 'Qualifié' | 'Signé' | 'Gagnée' | 'Perdue'
 
 export type DealLossReason = 'Inactivité' | 'Non éligible' | 'Pas intéressé' | 'Trop cher'
 

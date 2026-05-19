@@ -631,7 +631,7 @@ export const clientProfile: ClientProfile = {
           source: 'manual',
           changedBy: 'Hildegarde Champey',
         },
-        { etape: 'Signé / Souscrit', enteredAt: '13/05/26 17:30', source: 'auto' },
+        { etape: 'Signé', enteredAt: '13/05/26 17:30', source: 'auto' },
         {
           etape: 'Gagnée',
           enteredAt: '14/05/26 10:05',
@@ -762,7 +762,7 @@ export const clientProfile: ClientProfile = {
         { etape: 'Nouvelle', enteredAt: '18/03/26 16:10', source: 'auto' },
         { etape: 'Contacté / RDV pris', enteredAt: '19/03/26 09:00', source: 'auto' },
         { etape: 'Qualifié', enteredAt: '20/03/26 10:45', source: 'auto' },
-        { etape: 'Signé / Souscrit', enteredAt: '21/03/26 14:30', source: 'auto' },
+        { etape: 'Signé', enteredAt: '21/03/26 14:30', source: 'auto' },
         { etape: 'Gagnée', enteredAt: '22/03/26 08:15', source: 'auto' },
       ],
       amountHistory: [
@@ -817,12 +817,12 @@ export const clientProfile: ClientProfile = {
         { closedDate: '25 mars 2026', changedAt: '07/03/26 11:45', source: 'manual', changedBy: 'Étienne Moreau' },
         { closedDate: '10 mars 2026', changedAt: '10/03/26 09:30', source: 'auto' },
       ],
-      lastReachedEtape: 'Signé / Souscrit',
+      lastReachedEtape: 'Signé',
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '28/02/26 11:30', source: 'auto' },
         { etape: 'Contacté / RDV pris', enteredAt: '01/03/26 10:15', source: 'auto' },
         { etape: 'Qualifié', enteredAt: '04/03/26 16:00', source: 'auto' },
-        { etape: 'Signé / Souscrit', enteredAt: '07/03/26 11:45', source: 'auto' },
+        { etape: 'Signé', enteredAt: '07/03/26 11:45', source: 'auto' },
         {
           etape: 'Perdue',
           enteredAt: '10/03/26 09:30',

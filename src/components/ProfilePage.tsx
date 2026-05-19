@@ -219,7 +219,7 @@ const ETAPE_PIPELINE: { id: string; label: string; icon: LucideIcon; color: stri
   { id: 'Nouvelle', label: 'Nouvelle', icon: Sparkles, color: 'text-blue-300', activeBg: 'bg-blue-100', activeText: 'text-blue-700', activeBorder: 'ring-blue-400' },
   { id: 'Contacté / RDV pris', label: 'Contacté / RDV pris', icon: PhoneCall, color: 'text-amber-300', activeBg: 'bg-amber-100', activeText: 'text-amber-700', activeBorder: 'ring-amber-400' },
   { id: 'Qualifié', label: 'Qualifié', icon: ShieldCheck, color: 'text-violet-300', activeBg: 'bg-violet-100', activeText: 'text-violet-700', activeBorder: 'ring-violet-400' },
-  { id: 'Signé / Souscrit', label: 'Signé / Souscrit', icon: PenLine, color: 'text-orange-300', activeBg: 'bg-orange-100', activeText: 'text-orange-700', activeBorder: 'ring-orange-400' },
+  { id: 'Signé', label: 'Signé', icon: PenLine, color: 'text-orange-300', activeBg: 'bg-orange-100', activeText: 'text-orange-700', activeBorder: 'ring-orange-400' },
   { id: 'Gagnée', label: 'Gagnée', icon: Trophy, color: 'text-emerald-300', activeBg: 'bg-emerald-100', activeText: 'text-emerald-700', activeBorder: 'ring-emerald-400' },
   { id: 'Perdue', label: 'Perdue', icon: XCircle, color: 'text-red-300', activeBg: 'bg-red-100', activeText: 'text-red-600', activeBorder: 'ring-red-400' },
 ]
@@ -228,7 +228,7 @@ const ETAPE_BADGE_STYLES: Record<string, string> = {
   'Nouvelle': 'bg-blue-50 text-blue-700 border-blue-200',
   'Contacté / RDV pris': 'bg-amber-50 text-amber-700 border-amber-200',
   'Qualifié': 'bg-violet-50 text-violet-700 border-violet-200',
-  'Signé / Souscrit': 'bg-orange-50 text-orange-700 border-orange-200',
+  'Signé': 'bg-orange-50 text-orange-700 border-orange-200',
   'Gagnée': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   'Perdue': 'bg-red-50 text-red-600 border-red-200',
 }
@@ -597,7 +597,7 @@ function DealStageProgressBar({ currentEtape, lastReachedEtape }: { currentEtape
           'Nouvelle': '#93c5fd',
           'Contacté / RDV pris': '#fbbf24',
           'Qualifié': '#a78bfa',
-          'Signé / Souscrit': '#fb923c',
+          'Signé': '#fb923c',
           'Gagnée': '#34d399',
         }
         return (
@@ -2209,7 +2209,7 @@ function DealsTab() {
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
 
   const types = ['New Biz', 'Cross-Sell', 'Upsell']
-  const etapes = ['Nouvelle', 'Contacté / RDV pris', 'Qualifié', 'Signé / Souscrit', 'Gagnée', 'Perdue']
+  const etapes = ['Nouvelle', 'Contacté / RDV pris', 'Qualifié', 'Signé', 'Gagnée', 'Perdue']
   const projets = [
     ...new Set(deals.flatMap((d) => d.projets.map((p) => p.projetName).filter(Boolean))),
   ].sort((a, b) => a.localeCompare(b, 'fr'))
