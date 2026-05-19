@@ -1,6 +1,10 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import type { Deal, DealEtape, DealLossReason } from '../types'
+import type { Deal, DealCloseDateEntry, DealEtape, DealLossReason } from '../types'
+
+function appendCloseDateHistory(history: DealCloseDateEntry[] | undefined, entry: DealCloseDateEntry): DealCloseDateEntry[] {
+  return [...(history ?? []), entry]
+}
 
 const OPEN_PIPELINE: DealEtape[] = [
   'Nouvelle',
@@ -79,7 +83,36 @@ export function applyStageChange(
     ]
   }
 
+  const prevCd = deal.closedDate ?? null
+  const nextCd = next.closedDate ?? null
+  if (prevCd !== nextCd) {
+    next.closeDateHistory = appendCloseDateHistory(deal.closeDateHistory, {
+      closedDate: nextCd,
+      changedAt: timestamp,
+      source: 'auto',
+    })
+  }
+
   return next
+}
+
+/** Manual forecast close date from the deal sidebar (blocked when deal is terminal). */
+export function applyCloseDateChange(deal: Deal, newClosedDate: string | null | undefined, changedBy: string): Deal {
+  if (deal.etape === 'Gagnée' || deal.etape === 'Perdue') return deal
+  const normalized = newClosedDate?.trim() ? newClosedDate.trim() : null
+  const prevCd = deal.closedDate ?? null
+  if (prevCd === normalized) return deal
+  const timestamp = formatStageTimestamp()
+  return {
+    ...deal,
+    closedDate: normalized,
+    closeDateHistory: appendCloseDateHistory(deal.closeDateHistory, {
+      closedDate: normalized,
+      changedAt: timestamp,
+      source: 'manual',
+      changedBy,
+    }),
+  }
 }
 
 export function getStageLabelClass(etape: DealEtape): string {

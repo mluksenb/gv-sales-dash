@@ -616,6 +616,11 @@ export const clientProfile: ClientProfile = {
         },
       ],
       closedDate: '14 mai 2026',
+      closeDateHistory: [
+        { closedDate: '30 juin 2026', changedAt: '12/05/26 14:22', source: 'manual', changedBy: 'Hildegarde Champey' },
+        { closedDate: '20 mai 2026', changedAt: '13/05/26 09:15', source: 'manual', changedBy: 'Hildegarde Champey' },
+        { closedDate: '14 mai 2026', changedAt: '14/05/26 10:05', source: 'auto' },
+      ],
       lastReachedEtape: null,
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '12/05/26 14:22', source: 'auto' },
@@ -676,6 +681,10 @@ export const clientProfile: ClientProfile = {
         },
       ],
       closedDate: null,
+      closeDateHistory: [
+        { closedDate: '15 juin 2026', changedAt: '03/04/26 09:45', source: 'manual', changedBy: 'Hildegarde Champey' },
+        { closedDate: null, changedAt: '25/04/26 18:30', source: 'manual', changedBy: 'Hildegarde Champey' },
+      ],
       lastReachedEtape: null,
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '03/04/26 09:45', source: 'auto' },
@@ -744,6 +753,10 @@ export const clientProfile: ClientProfile = {
         },
       ],
       closedDate: '22 mars 2026',
+      closeDateHistory: [
+        { closedDate: '31 mars 2026', changedAt: '18/03/26 16:10', source: 'manual', changedBy: 'Hildegarde Champey' },
+        { closedDate: '22 mars 2026', changedAt: '22/03/26 08:15', source: 'auto' },
+      ],
       lastReachedEtape: null,
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '18/03/26 16:10', source: 'auto' },
@@ -800,6 +813,10 @@ export const clientProfile: ClientProfile = {
         },
       ],
       closedDate: '10 mars 2026',
+      closeDateHistory: [
+        { closedDate: '25 mars 2026', changedAt: '07/03/26 11:45', source: 'manual', changedBy: 'Étienne Moreau' },
+        { closedDate: '10 mars 2026', changedAt: '10/03/26 09:30', source: 'auto' },
+      ],
       lastReachedEtape: 'Signé / Souscrit',
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '28/02/26 11:30', source: 'auto' },
@@ -847,6 +864,11 @@ export const clientProfile: ClientProfile = {
         },
       ],
       closedDate: null,
+      closeDateHistory: [
+        { closedDate: '30 avril 2026', changedAt: '15/01/26 08:55', source: 'manual', changedBy: 'Hildegarde Champey' },
+        { closedDate: '15 mars 2026', changedAt: '20/01/26 14:30', source: 'manual', changedBy: 'Hildegarde Champey' },
+        { closedDate: null, changedAt: '05/02/26 10:00', source: 'manual', changedBy: 'Hildegarde Champey' },
+      ],
       lastReachedEtape: null,
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '15/01/26 08:55', source: 'auto' },

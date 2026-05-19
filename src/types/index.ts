@@ -93,6 +93,14 @@ export interface DealStageEntry {
   changedBy?: string
 }
 
+/** Forecast / actual close date change (French display string or null). */
+export interface DealCloseDateEntry {
+  closedDate: string | null
+  changedAt: string
+  source?: 'auto' | 'manual'
+  changedBy?: string
+}
+
 export interface DealAmountEntry {
   montant: number
   changedAt: string
@@ -135,6 +143,8 @@ export interface Deal {
   /** Optional — absent in older persisted deals. */
   rendezVous?: DealRendezVous[]
   closedDate: string | null
+  /** Chronological audit of close date changes (forecast edits + auto at closure). */
+  closeDateHistory?: DealCloseDateEntry[]
   lastReachedEtape: string | null
   stageHistory: DealStageEntry[]
   amountHistory: DealAmountEntry[]

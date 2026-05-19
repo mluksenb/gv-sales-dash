@@ -15,6 +15,7 @@ import type {
   DealProjet,
   DealRendezVous,
   DealRendezVousStatus,
+  DealCloseDateEntry,
   DealStageEntry,
   DealUtm,
   TaskStatus,
@@ -28,7 +29,7 @@ import {
   type ProfileTab,
 } from '../lib/profileTabs'
 import { loadDeals, saveDeals } from '../lib/dealStorage'
-import { applyStageChange, getStageLabelClass, LOSS_REASON_OPTIONS } from '../lib/dealStage'
+import { applyCloseDateChange, applyStageChange, getStageLabelClass, LOSS_REASON_OPTIONS } from '../lib/dealStage'
 
 const ALL_TABS = [
   { id: 'informations' as const, label: 'Informations' },
@@ -685,6 +686,71 @@ function StageHistoryLog({ stageHistory, currentEtape }: { stageHistory: DealSta
   )
 }
 
+function CloseDateHistoryLog({ closeDateHistory }: { closeDateHistory: DealCloseDateEntry[] }) {
+  const lastIdx = closeDateHistory.length - 1
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50/50 overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-gray-100">
+            <th className="pl-3 pr-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Close date
+            </th>
+            <th className="px-2 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Source
+            </th>
+            <th className="pr-3.5 pl-2 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              Date de modif.
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {closeDateHistory.map((entry, i) => {
+            const isCurrent = i === lastIdx
+            const changedByHuman = Boolean(entry.changedBy?.trim())
+            return (
+              <tr key={`${entry.changedAt}-${i}`}>
+                <td className="pl-3 pr-2 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center justify-center w-3 shrink-0">
+                      {isCurrent ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" /> : null}
+                    </div>
+                    <span
+                      className={`text-[13px] font-medium truncate ${isCurrent ? 'text-gray-900' : 'text-gray-500'}`}
+                    >
+                      {entry.closedDate ?? 'Non définie'}
+                    </span>
+                  </div>
+                </td>
+                <td className={`px-2 py-2.5 ${isCurrent ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {changedByHuman ? (
+                    <div
+                      className="inline-flex w-6 h-6 rounded-full bg-gray-200 items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
+                      title={entry.changedBy}
+                      aria-label={entry.changedBy}
+                    >
+                      {getOwnerInitials(entry.changedBy!)}
+                    </div>
+                  ) : (
+                    <span className="text-[13px] whitespace-nowrap">Auto</span>
+                  )}
+                </td>
+                <td
+                  className={`pr-3.5 pl-2 py-2.5 text-right text-[13px] whitespace-nowrap ${
+                    isCurrent ? 'text-gray-700 font-medium' : 'text-gray-400'
+                  }`}
+                >
+                  {formatDealHistoryTimestampDisplay(entry.changedAt)}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 
 const OWNER_OPTIONS = ['Hildegarde Champey', 'Étienne Moreau', 'Sophie Laurent', 'Marc Dupont', 'Julie Fontaine']
 
@@ -989,6 +1055,8 @@ function KeyDetailsCard({
   utm,
   isWon,
   isLost,
+  closeDateHistory = [],
+  onCloseDateCommit,
 }: {
   owner: string
   priority: DealPriority
@@ -997,9 +1065,12 @@ function KeyDetailsCard({
   utm: DealUtm
   isWon: boolean
   isLost: boolean
+  closeDateHistory?: DealCloseDateEntry[]
+  onCloseDateCommit?: (closedDate: string | null) => void
 }) {
   const [editingField, setEditingField] = useState<'owner' | 'priority' | 'closeDate' | null>(null)
   const [sourceExpanded, setSourceExpanded] = useState(false)
+  const [closeDateHistoryExpanded, setCloseDateHistoryExpanded] = useState(false)
   const [ownerValue, setOwnerValue] = useState(owner)
   const [priorityValue, setPriorityValue] = useState(priority)
   const [closeDateValue, setCloseDateValue] = useState(closedDate || '')
@@ -1010,6 +1081,7 @@ function KeyDetailsCard({
   const dateInputRef = useRef<HTMLInputElement>(null)
 
   const isClosed = isWon || isLost
+  const hasCloseDateHistory = closeDateHistory.length > 0
   const hasUtm = Boolean(utm.utmSource || utm.utmMedium || utm.utmCampaign || utm.utmContent)
   const utmRows = [
     { label: 'utm_source', value: utm.utmSource },
@@ -1070,7 +1142,9 @@ function KeyDetailsCard({
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isoDate = e.target.value
     if (isoDate) {
-      setCloseDateValue(formatDateToFrench(isoDate))
+      const french = formatDateToFrench(isoDate)
+      setCloseDateValue(french)
+      onCloseDateCommit?.(french)
     }
     setEditingField(null)
   }
@@ -1207,48 +1281,74 @@ function KeyDetailsCard({
       <div className="border-t border-gray-100" />
 
       {/* Close date */}
-      <div className="flex items-center gap-3 w-full min-w-0">
-        <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-          <Calendar size={15} className="text-gray-500" />
-        </div>
-        <div className="relative flex-1 min-w-0">
-          {editingField === 'closeDate' && !isClosed ? (
-            <input
-              ref={dateInputRef}
-              type="date"
-              onChange={handleDateChange}
-              onBlur={() => setEditingField(null)}
-              className="w-full text-[14px] font-medium text-gray-900 border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-            />
-          ) : isClosed ? (
-            <div className={keyFieldBtnClass(false, false)}>
-              <div className="text-[12px] text-gray-400">Close date</div>
-              <div
-                className={`text-[14px] font-medium ${getCloseDateTextClass(
-                  closeDateValue || closedDate,
-                  isClosed,
-                )}`}
-              >
-                {closeDateValue || 'Non définie'}
-              </div>
+      <div>
+        <div className="flex items-center gap-3 w-full min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+            <Calendar size={15} className="text-gray-500" />
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            <div className="relative min-w-0 flex-1">
+              {editingField === 'closeDate' && !isClosed ? (
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  onChange={handleDateChange}
+                  onBlur={() => setEditingField(null)}
+                  className="w-full text-[14px] font-medium text-gray-900 border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                />
+              ) : isClosed ? (
+                <div className={keyFieldBtnClass(false, false)}>
+                  <div className="text-[12px] text-gray-400">Close date</div>
+                  <div
+                    className={`text-[14px] font-medium ${getCloseDateTextClass(
+                      closeDateValue || closedDate,
+                      isClosed,
+                    )}`}
+                  >
+                    {closeDateValue || 'Non définie'}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toggleField('closeDate')}
+                  className={keyFieldBtnClass(false, true)}
+                >
+                  <div className="text-[12px] text-gray-400">Close date</div>
+                  <div
+                    className={`text-[14px] font-medium ${getCloseDateTextClass(
+                      closeDateValue || closedDate,
+                      isClosed,
+                    )}`}
+                  >
+                    {closeDateValue || 'Non définie'}
+                  </div>
+                </button>
+              )}
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => toggleField('closeDate')}
-              className={keyFieldBtnClass(false, true)}
-            >
-              <div className="text-[12px] text-gray-400">Close date</div>
-              <div
-                className={`text-[14px] font-medium ${getCloseDateTextClass(
-                  closeDateValue || closedDate,
-                  isClosed,
-                )}`}
+            {hasCloseDateHistory ? (
+              <button
+                type="button"
+                onClick={() => setCloseDateHistoryExpanded((v) => !v)}
+                className="shrink-0 p-1 rounded-lg hover:bg-gray-50 group"
+                aria-expanded={closeDateHistoryExpanded}
+                aria-label="Historique des dates de clôture"
               >
-                {closeDateValue || 'Non définie'}
-              </div>
-            </button>
-          )}
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-300 group-hover:text-gray-500 transition-all duration-200 ${closeDateHistoryExpanded ? 'rotate-180' : ''}`}
+                />
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className={`overflow-hidden transition-all duration-200 ease-out ${closeDateHistoryExpanded ? 'max-h-[560px] opacity-100' : 'max-h-0 opacity-0'}`}
+        >
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <CloseDateHistoryLog closeDateHistory={closeDateHistory} />
+          </div>
         </div>
       </div>
 
@@ -1903,12 +2003,14 @@ export function DealDetailsSidebar({
   onDissociateProjet,
   onAssociateProjets,
   onStageChange,
+  onCloseDateCommit,
 }: {
   deal: Deal
   onClose: () => void
   onDissociateProjet?: (projet: DealProjet) => void
   onAssociateProjets?: (projets: DealProjet[]) => void
   onStageChange?: (newEtape: DealEtape, lossReason?: DealLossReason) => void
+  onCloseDateCommit?: (closedDate: string | null) => void
 }) {
   const [visible, setVisible] = useState(false)
   const [amountExpanded, setAmountExpanded] = useState(false)
@@ -2039,10 +2141,12 @@ export function DealDetailsSidebar({
             owner={deal.owner}
             priority={deal.priority}
             closedDate={deal.closedDate}
+            closeDateHistory={deal.closeDateHistory ?? []}
             source={deal.source}
             utm={deal.utm}
             isWon={isWon}
             isLost={isLost}
+            onCloseDateCommit={canModifyProjets ? onCloseDateCommit : undefined}
           />
 
           {/* Projets card */}
@@ -2260,6 +2364,11 @@ function DealsTab() {
           }}
           onStageChange={(newEtape, lossReason) => {
             const updated = applyStageChange(selectedDeal, newEtape, lossReason, selectedDeal.owner)
+            setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
+            setSelectedDeal(updated)
+          }}
+          onCloseDateCommit={(closedDate) => {
+            const updated = applyCloseDateChange(selectedDeal, closedDate, selectedDeal.owner)
             setDeals((prev) => prev.map((d) => (d.id === updated.id ? updated : d)))
             setSelectedDeal(updated)
           }}
