@@ -1,6 +1,6 @@
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import type { Deal, DealEtape, DealLossReason, DealStageEntry } from '../types'
+import type { Deal, DealEtape, DealLossReason } from '../types'
 
 const OPEN_PIPELINE: DealEtape[] = [
   'Nouvelle',
@@ -28,11 +28,6 @@ function resolveLastReachedBeforeLoss(deal: Deal): DealEtape {
   }
   const fromHistory = [...deal.stageHistory].reverse().find((e) => OPEN_PIPELINE.includes(e.etape))
   return fromHistory?.etape ?? 'Nouvelle'
-}
-
-export function getStageHistorySourceLabel(entry: DealStageEntry): string {
-  if (entry.source === 'manual' && entry.changedBy) return entry.changedBy
-  return 'Auto'
 }
 
 export function applyStageChange(

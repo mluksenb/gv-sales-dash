@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame, Plus } from 'lucide-react'
+import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw, Flame, Plus, CircleDot } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parse, parseISO, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -28,7 +28,7 @@ import {
   type ProfileTab,
 } from '../lib/profileTabs'
 import { loadDeals, saveDeals } from '../lib/dealStorage'
-import { applyStageChange, getStageHistorySourceLabel, getStageLabelClass, LOSS_REASON_OPTIONS } from '../lib/dealStage'
+import { applyStageChange, getStageLabelClass, LOSS_REASON_OPTIONS } from '../lib/dealStage'
 
 const ALL_TABS = [
   { id: 'informations' as const, label: 'Informations' },
@@ -638,7 +638,7 @@ function StageHistoryLog({ stageHistory, currentEtape }: { stageHistory: DealSta
             const isCurrent = entry.etape === currentEtape
             const nextEntry = stageHistory[i + 1] ?? null
             const duration = formatDuration(entry.enteredAt, nextEntry?.enteredAt ?? null)
-            const sourceLabel = getStageHistorySourceLabel(entry)
+            const changedByHuman = Boolean(entry.changedBy?.trim())
             return (
               <tr key={i}>
                 <td className="pl-3 pr-2 py-2">
@@ -655,8 +655,18 @@ function StageHistoryLog({ stageHistory, currentEtape }: { stageHistory: DealSta
                     </span>
                   </div>
                 </td>
-                <td className={`px-2 py-2.5 text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-600' : 'text-gray-400'}`}>
-                  {sourceLabel}
+                <td className={`px-2 py-2.5 ${isCurrent ? 'text-gray-600' : 'text-gray-400'}`}>
+                  {changedByHuman ? (
+                    <div
+                      className="inline-flex w-6 h-6 rounded-full bg-gray-200 items-center justify-center text-[9px] font-semibold text-gray-600 shrink-0"
+                      title={entry.changedBy}
+                      aria-label={entry.changedBy}
+                    >
+                      {getOwnerInitials(entry.changedBy!)}
+                    </div>
+                  ) : (
+                    <span className="text-[13px] whitespace-nowrap">Auto</span>
+                  )}
                 </td>
                 <td className={`px-2 py-2.5 text-[13px] whitespace-nowrap ${isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>
                   {duration}
@@ -810,10 +820,12 @@ function StageCard({
 
   const hasHistory = stageHistory.length > 0
   const currentStageEntry = ETAPE_PIPELINE.find((s) => s.id === etape)
+  const StageIcon = currentStageEntry?.icon ?? CircleDot
   const currentStageStartEntry = [...stageHistory].reverse().find((e) => e.etape === etape)
   const sinceInCurrentStage = currentStageStartEntry
     ? formatDuration(currentStageStartEntry.enteredAt, null)
     : ''
+  const isTerminalStage = etape === 'Gagnée' || etape === 'Perdue'
 
   useEffect(() => {
     if (!onStageChange) {
@@ -881,61 +893,66 @@ function StageCard({
       )}
 
       <div className="flex items-center justify-between gap-1.5">
-        <div ref={stageDropdownRef} className="relative flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={() => onStageChange && setEditing((v) => !v)}
-            disabled={!onStageChange}
-            aria-expanded={!!(editing && onStageChange)}
-            aria-haspopup="listbox"
-            title={onStageChange ? "Modifier l'étape" : undefined}
-            className={`flex items-center w-full text-left min-w-0 rounded-lg border transition-colors ${
-              onStageChange
-                ? `cursor-pointer px-2 py-1 border-transparent hover:bg-gray-50 hover:border-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:border-emerald-200/60 active:bg-gray-100/60 ${
-                    editing ? 'bg-gray-50 border-gray-200' : ''
-                  }`
-                : 'cursor-default py-1 border-transparent'
-            }`}
-          >
-            <div className="text-left min-w-0">
-              <div className="text-[12px] text-gray-400">Étape</div>
-              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 min-w-0">
-                <span className={`text-[14px] font-semibold ${getStageLabelClass(etape)}`}>
-                  {currentStageEntry?.label ?? etape}
-                </span>
-                {!historyExpanded && sinceInCurrentStage ? (
-                  <span className="text-[13px] font-normal text-gray-400 whitespace-nowrap">
-                    (depuis {sinceInCurrentStage})
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+            <StageIcon size={15} className="text-gray-500" aria-hidden />
+          </div>
+          <div ref={stageDropdownRef} className="relative flex-1 min-w-0">
+            <button
+              type="button"
+              onClick={() => onStageChange && setEditing((v) => !v)}
+              disabled={!onStageChange}
+              aria-expanded={!!(editing && onStageChange)}
+              aria-haspopup="listbox"
+              title={onStageChange ? "Modifier l'étape" : undefined}
+              className={`flex items-center w-full text-left min-w-0 rounded-lg border transition-colors ${
+                onStageChange
+                  ? `cursor-pointer px-2 py-1 border-transparent hover:bg-gray-50 hover:border-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/30 focus-visible:border-emerald-200/60 active:bg-gray-100/60 ${
+                      editing ? 'bg-gray-50 border-gray-200' : ''
+                    }`
+                  : 'cursor-default py-1 border-transparent'
+              }`}
+            >
+              <div className="text-left min-w-0">
+                <div className="text-[12px] text-gray-400">Étape</div>
+                <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 min-w-0">
+                  <span className={`text-[14px] font-semibold ${getStageLabelClass(etape)}`}>
+                    {currentStageEntry?.label ?? etape}
                   </span>
-                ) : null}
-              </div>
-            </div>
-          </button>
-          {editing && onStageChange ? (
-            <div className="absolute top-full left-0 mt-1 z-20 w-64 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden py-1 max-h-72 overflow-y-auto">
-              {ETAPE_PIPELINE.map((stage) => {
-                const Icon = stage.icon
-                const isSelected = stage.id === etape
-                return (
-                  <button
-                    key={stage.id}
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleStageSelect(stage.id as DealEtape)}
-                    className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between gap-2 ${
-                      isSelected ? 'font-semibold bg-gray-50' : ''
-                    }`}
-                  >
-                    <span className={`flex items-center gap-2.5 min-w-0 ${getStageLabelClass(stage.id as DealEtape)}`}>
-                      <Icon size={14} className="shrink-0" />
-                      <span className="truncate">{stage.label}</span>
+                  {!historyExpanded && sinceInCurrentStage ? (
+                    <span className="text-[13px] font-normal text-gray-400 whitespace-nowrap">
+                      ({isTerminalStage ? 'il y a' : 'depuis'} {sinceInCurrentStage})
                     </span>
-                    {isSelected && <Check size={14} className="text-emerald-600 shrink-0" />}
-                  </button>
-                )
-              })}
-            </div>
-          ) : null}
+                  ) : null}
+                </div>
+              </div>
+            </button>
+            {editing && onStageChange ? (
+              <div className="absolute top-full left-0 mt-1 z-20 w-64 bg-white rounded-xl border border-gray-200 shadow-lg overflow-hidden py-1 max-h-72 overflow-y-auto">
+                {ETAPE_PIPELINE.map((stage) => {
+                  const Icon = stage.icon
+                  const isSelected = stage.id === etape
+                  return (
+                    <button
+                      key={stage.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleStageSelect(stage.id as DealEtape)}
+                      className={`w-full text-left px-3 py-2 text-[13px] hover:bg-gray-50 flex items-center justify-between gap-2 ${
+                        isSelected ? 'font-semibold bg-gray-50' : ''
+                      }`}
+                    >
+                      <span className={`flex items-center gap-2.5 min-w-0 ${getStageLabelClass(stage.id as DealEtape)}`}>
+                        <Icon size={14} className="shrink-0" />
+                        <span className="truncate">{stage.label}</span>
+                      </span>
+                      {isSelected && <Check size={14} className="text-emerald-600 shrink-0" />}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : null}
+          </div>
         </div>
         {hasHistory && (
           <button
@@ -1147,7 +1164,7 @@ function KeyDetailsCard({
       {/* Priority */}
       <div className="flex items-center gap-3 w-full min-w-0">
         <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-          <Flame size={15} className="text-gray-400" />
+          <Flame size={15} className="text-gray-500" />
         </div>
         <div ref={priorityDropdownRef} className="relative flex-1 min-w-0">
           <button
@@ -1192,7 +1209,7 @@ function KeyDetailsCard({
       {/* Close date */}
       <div className="flex items-center gap-3 w-full min-w-0">
         <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-          <Calendar size={15} className="text-gray-400" />
+          <Calendar size={15} className="text-gray-500" />
         </div>
         <div className="relative flex-1 min-w-0">
           {editingField === 'closeDate' && !isClosed ? (
@@ -1554,7 +1571,11 @@ function ProjetsCard({
             <Folder size={15} className="text-gray-500" />
           </div>
           <span className="text-[14px] font-semibold text-gray-900">Projets liés</span>
-          <span className="text-[12px] font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
+          <span
+            className={`text-[12px] font-medium rounded-full px-2.5 py-0.5 ${
+              projets.length === 0 ? 'text-gray-400 bg-gray-100' : 'text-blue-700 bg-blue-50'
+            }`}
+          >
             {projets.length}
           </span>
         </div>
@@ -1672,7 +1693,11 @@ function RendezVousCard({ rendezVous }: { rendezVous: DealRendezVous[] }) {
             <Calendar size={15} className="text-gray-500" />
           </div>
           <span className="text-[14px] font-semibold text-gray-900">Rendez-vous</span>
-          <span className="text-[12px] font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
+          <span
+            className={`text-[12px] font-medium rounded-full px-2.5 py-0.5 ${
+              rendezVous.length === 0 ? 'text-gray-400 bg-gray-100' : 'text-blue-700 bg-blue-50'
+            }`}
+          >
             {rendezVous.length}
           </span>
         </div>
@@ -1751,7 +1776,11 @@ function TasksCard({ dealId }: { dealId: string }) {
             <ClipboardList size={15} className="text-gray-500" />
           </div>
           <span className="text-[14px] font-semibold text-gray-900">Tâches</span>
-          <span className="text-[12px] font-medium text-gray-400 bg-gray-100 rounded-full px-2.5 py-0.5">
+          <span
+            className={`text-[12px] font-medium rounded-full px-2.5 py-0.5 ${
+              dealTasks.length === 0 ? 'text-gray-400 bg-gray-100' : 'text-blue-700 bg-blue-50'
+            }`}
+          >
             {dealTasks.length}
           </span>
         </div>

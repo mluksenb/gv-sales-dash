@@ -620,9 +620,19 @@ export const clientProfile: ClientProfile = {
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '12/05/26 14:22', source: 'auto' },
         { etape: 'Contacté / RDV pris', enteredAt: '12/05/26 15:40', source: 'auto' },
-        { etape: 'Qualifié', enteredAt: '13/05/26 09:15', source: 'auto' },
+        {
+          etape: 'Qualifié',
+          enteredAt: '13/05/26 09:15',
+          source: 'manual',
+          changedBy: 'Hildegarde Champey',
+        },
         { etape: 'Signé / Souscrit', enteredAt: '13/05/26 17:30', source: 'auto' },
-        { etape: 'Gagnée', enteredAt: '14/05/26 10:05', source: 'auto' },
+        {
+          etape: 'Gagnée',
+          enteredAt: '14/05/26 10:05',
+          source: 'manual',
+          changedBy: 'Hildegarde Champey',
+        },
       ],
       amountHistory: [
         { montant: 10_000, changedAt: '12/05/26 14:22' },
@@ -669,7 +679,12 @@ export const clientProfile: ClientProfile = {
       lastReachedEtape: null,
       stageHistory: [
         { etape: 'Nouvelle', enteredAt: '03/04/26 09:45', source: 'auto' },
-        { etape: 'Contacté / RDV pris', enteredAt: '05/04/26 14:10', source: 'auto' },
+        {
+          etape: 'Contacté / RDV pris',
+          enteredAt: '05/04/26 14:10',
+          source: 'manual',
+          changedBy: 'Hildegarde Champey',
+        },
         { etape: 'Qualifié', enteredAt: '12/04/26 11:20', source: 'auto' },
       ],
       amountHistory: [
@@ -791,7 +806,12 @@ export const clientProfile: ClientProfile = {
         { etape: 'Contacté / RDV pris', enteredAt: '01/03/26 10:15', source: 'auto' },
         { etape: 'Qualifié', enteredAt: '04/03/26 16:00', source: 'auto' },
         { etape: 'Signé / Souscrit', enteredAt: '07/03/26 11:45', source: 'auto' },
-        { etape: 'Perdue', enteredAt: '10/03/26 09:30', source: 'auto' },
+        {
+          etape: 'Perdue',
+          enteredAt: '10/03/26 09:30',
+          source: 'manual',
+          changedBy: 'Étienne Moreau',
+        },
       ],
       amountHistory: [
         { montant: 8_000, changedAt: '28/02/26 11:30' },
