@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Users, Building2, Search, ClipboardList, RotateCcw } from 'lucide-react'
+import { ChevronRight, Mail, Phone, CircleAlert, ChevronDown, ChevronUp, ArrowUpDown, Check, User, MapPin, Briefcase, Folder, MoreVertical, Eye, Activity, PiggyBank, ArrowLeftRight, Clock, FileText, Video, PieChart, Sparkles, PhoneCall, ShieldCheck, PenLine, Trophy, XCircle, X, Calendar, Building2, Search, ClipboardList, RotateCcw } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { format, parse, isValid } from 'date-fns'
 import { fr } from 'date-fns/locale'
