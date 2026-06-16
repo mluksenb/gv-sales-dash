@@ -191,14 +191,59 @@ export function computeKpis(filtered: Conversation[], channel: ChannelFilter = '
   }
 }
 
+export interface TopicAssignmentOptions {
+  includeAdditionalTopics?: boolean
+  topicToCategory?: Map<string, string>
+}
+
+function topicAssignments(
+  c: Conversation,
+  { includeAdditionalTopics = false, topicToCategory }: TopicAssignmentOptions,
+): { topic: string; category: string }[] {
+  const assignments: { topic: string; category: string }[] = [
+    { topic: c.topic, category: c.topicCategory },
+  ]
+  if (!includeAdditionalTopics || !c.secondaryTopics?.length) return assignments
+
+  for (const topic of c.secondaryTopics) {
+    if (topic === c.topic) continue
+    assignments.push({
+      topic,
+      category: topicToCategory?.get(topic) ?? 'Divers',
+    })
+  }
+  return assignments
+}
+
+export function conversationMatchesTopic(
+  c: Conversation,
+  topic: string,
+  options: TopicAssignmentOptions = {},
+): boolean {
+  return topicAssignments(c, options).some((a) => a.topic === topic)
+}
+
+export function conversationMatchesCategory(
+  c: Conversation,
+  category: string,
+  options: TopicAssignmentOptions = {},
+): boolean {
+  return topicAssignments(c, options).some((a) => a.category === category)
+}
+
 /** Volume of contact reasons across all channels in the filtered set. */
-export function computeContactReasons(filtered: Conversation[]): ContactReason[] {
+export function computeContactReasons(
+  filtered: Conversation[],
+  options: TopicAssignmentOptions = {},
+): ContactReason[] {
   const byCategory = new Map<string, Map<string, number>>()
 
   for (const c of filtered) {
-    if (!byCategory.has(c.topicCategory)) byCategory.set(c.topicCategory, new Map())
-    const topics = byCategory.get(c.topicCategory)!
-    topics.set(c.topic, (topics.get(c.topic) ?? 0) + 1)
+    for (const { topic, category } of topicAssignments(c, options)) {
+      if (!byCategory.has(category)) byCategory.set(category, new Map())
+      const topics = byCategory.get(category)!
+      topics.set(topic, (topics.get(topic) ?? 0) + 1)
+    }
   }
 
   const reasons: ContactReason[] = []
@@ -330,19 +375,25 @@ export interface ConversationFilter {
   topic?: string
   category?: string
   resolution?: Resolution | 'resolved' | 'all'
+  includeAdditionalTopics?: boolean
+  topicToCategory?: Map<string, string>
 }
 
 export function selectConversations(
-  chatConversations: Conversation[],
+  conversations: Conversation[],
   filter: ConversationFilter,
 ): Conversation[] {
-  // Topic / category selection from chat (Fin scope) by default.
-  let pool = chatConversations
+  const topicOptions: TopicAssignmentOptions = {
+    includeAdditionalTopics: filter.includeAdditionalTopics,
+    topicToCategory: filter.topicToCategory,
+  }
+
+  let pool = conversations
   if (filter.category && !filter.topic) {
-    pool = pool.filter((c) => c.topicCategory === filter.category)
+    pool = pool.filter((c) => conversationMatchesCategory(c, filter.category!, topicOptions))
   }
   if (filter.topic) {
-    pool = pool.filter((c) => c.topic === filter.topic)
+    pool = pool.filter((c) => conversationMatchesTopic(c, filter.topic!, topicOptions))
   }
 
   if (filter.resolution && filter.resolution !== 'all') {

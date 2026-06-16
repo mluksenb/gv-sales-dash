@@ -21,6 +21,8 @@ interface Props {
   selection: Selection | null
   conversations: Conversation[]
   workspaceId: string
+  includeAdditionalTopics: boolean
+  topicToCategory: Map<string, string>
   onClose: () => void
 }
 
@@ -48,7 +50,14 @@ function countResolutions(list: Conversation[]): ResolutionCounts {
   return counts
 }
 
-export function ConversationPanel({ selection, conversations, workspaceId, onClose }: Props) {
+export function ConversationPanel({
+  selection,
+  conversations,
+  workspaceId,
+  includeAdditionalTopics,
+  topicToCategory,
+  onClose,
+}: Props) {
   const [resFilter, setResFilter] = useState<ResFilter>('all')
 
   useEffect(() => {
@@ -67,8 +76,12 @@ export function ConversationPanel({ selection, conversations, workspaceId, onClo
     if (!selection) return []
     const filter: ConversationFilter =
       selection.type === 'topic' ? { topic: selection.value } : { category: selection.value }
-    return selectConversations(conversations, filter)
-  }, [selection, conversations])
+    return selectConversations(conversations, {
+      ...filter,
+      includeAdditionalTopics,
+      topicToCategory,
+    })
+  }, [selection, conversations, includeAdditionalTopics, topicToCategory])
 
   const counts = useMemo(() => countResolutions(baseList), [baseList])
   // Fin only operates on chat — scope the headline resolution metric to chat

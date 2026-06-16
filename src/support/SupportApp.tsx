@@ -28,6 +28,7 @@ export function SupportApp() {
   const state = useDashboardData()
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [selection, setSelection] = useState<Selection | null>(null)
+  const [includeAdditionalTopics, setIncludeAdditionalTopics] = useState(false)
 
   const data = state.data
 
@@ -54,7 +55,21 @@ export function SupportApp() {
   const chatFiltered = useMemo(() => filtered.filter((c) => c.medium === 'chat'), [filtered])
 
   const kpis = useMemo(() => computeKpis(filtered, filters.channel), [filtered, filters.channel])
-  const contactReasons = useMemo(() => computeContactReasons(filtered), [filtered])
+  const contactReasons = useMemo(
+    () =>
+      computeContactReasons(filtered, {
+        includeAdditionalTopics,
+        topicToCategory,
+      }),
+    [filtered, includeAdditionalTopics, topicToCategory],
+  )
+  const contactReasonTotal = useMemo(
+    () =>
+      includeAdditionalTopics
+        ? contactReasons.reduce((sum, r) => sum + r.total, 0)
+        : filtered.length,
+    [contactReasons, includeAdditionalTopics, filtered.length],
+  )
   const finStats = useMemo(() => computeFinTopicStats(chatFiltered), [chatFiltered])
   const trend = useMemo(() => {
     if (!data) return []
@@ -159,11 +174,26 @@ export function SupportApp() {
           <Card className="p-5">
             <SectionTitle
               title="Que nous demandent les clients ?"
-              subtitle="Volume par catégorie et sous-catégorie — cliquez pour explorer"
+              subtitle={
+                includeAdditionalTopics
+                  ? 'Volume par catégorie et sous-catégorie — une conversation peut compter plusieurs fois si elle comporte plusieurs sujets'
+                  : 'Volume par catégorie et sous-catégorie — sujet principal uniquement'
+              }
+              right={
+                <button
+                  type="button"
+                  onClick={() => setIncludeAdditionalTopics((v) => !v)}
+                  className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                >
+                  {includeAdditionalTopics
+                    ? 'Exclure les sujets additionnels'
+                    : 'Inclure les sujets additionnels'}
+                </button>
+              }
             />
             <ContactReasons
               reasons={contactReasons}
-              total={filtered.length}
+              total={contactReasonTotal}
               onSelectCategory={selectCategory}
               onSelectTopic={selectTopic}
             />
@@ -194,8 +224,32 @@ export function SupportApp() {
             }
           />
 
+          {chatFiltered.length === 0 ? (
+            <div className="rounded-xl bg-slate-50 py-12 text-center text-sm text-slate-400">
+              Fin n'intervient que sur le chat. Sélectionnez « Chat » ou « Tous les canaux » pour voir sa
+              performance.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div>
+                <PriorityMatrix
+                  stats={finStats}
+                  selectedTopic={selection?.type === 'topic' ? selection.value : null}
+                  onSelect={selectTopic}
+                />
+              </div>
+              <div>
+                <FinPerformanceTable
+                  stats={finStats}
+                  selectedTopic={selection?.type === 'topic' ? selection.value : null}
+                  onSelect={selectTopic}
+                />
+              </div>
+            </div>
+          )}
+
           {priorities.length > 0 && (
-            <div className="mb-5 rounded-xl border border-red-100 bg-gradient-to-r from-red-50 to-transparent p-3.5">
+            <div className="mt-5 rounded-xl border border-red-100 bg-gradient-to-r from-red-50 to-transparent p-3.5">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-red-500">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 Priorités d'amélioration · fort volume, faible résolution
@@ -220,30 +274,6 @@ export function SupportApp() {
               </div>
             </div>
           )}
-
-          {chatFiltered.length === 0 ? (
-            <div className="rounded-xl bg-slate-50 py-12 text-center text-sm text-slate-400">
-              Fin n'intervient que sur le chat. Sélectionnez « Chat » ou « Tous les canaux » pour voir sa
-              performance.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-              <div>
-                <PriorityMatrix
-                  stats={finStats}
-                  selectedTopic={selection?.type === 'topic' ? selection.value : null}
-                  onSelect={selectTopic}
-                />
-              </div>
-              <div>
-                <FinPerformanceTable
-                  stats={finStats}
-                  selectedTopic={selection?.type === 'topic' ? selection.value : null}
-                  onSelect={selectTopic}
-                />
-              </div>
-            </div>
-          )}
         </Card>
       </main>
 
@@ -251,6 +281,8 @@ export function SupportApp() {
         selection={selection}
         conversations={filtered}
         workspaceId={data.meta.intercomWorkspaceId}
+        includeAdditionalTopics={includeAdditionalTopics}
+        topicToCategory={topicToCategory}
         onClose={() => setSelection(null)}
       />
     </div>
