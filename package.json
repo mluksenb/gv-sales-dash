@@ -7,13 +7,31 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:intercom": "vitest run scripts/intercom",
+    "intercom:normalize": "tsx scripts/intercom/normalize-cli.ts",
+    "intercom:write-batch": "tsx scripts/intercom/write-batch.ts",
+    "intercom:export": "tsx scripts/intercom/fetch-export.ts --search",
+    "intercom:export:next": "tsx scripts/intercom/fetch-export.ts --search --offset 200",
+    "intercom:summarize-backfill": "tsx scripts/intercom/summarize-backfill.ts",
+    "intercom:classify-backfill": "tsx scripts/intercom/classify-backfill.ts",
+    "intercom:backfill-topic-categories": "tsx scripts/intercom/backfill-topic-categories.ts",
+    "intercom:tag-security-incident": "tsx scripts/intercom/tag-security-incident.ts",
+    "intercom:export:batch-2": "tsx scripts/intercom/fetch-export.ts --search --offset 603 --limit 600 --concurrency 10",
+    "intercom:export:batch-2:resume": "tsx scripts/intercom/fetch-export.ts data/intercom/export-ids.json --concurrency 10",
+    "intercom:export:continue": "tsx scripts/intercom/fetch-export.ts --continue --limit 600 --concurrency 10 --batch",
+    "intercom:prune-before": "tsx scripts/intercom/prune-before-date.ts",
+    "intercom:refill-gap": "tsx scripts/intercom/refill-gap.ts",
+    "intercom:dashboard-data": "tsx scripts/intercom/build-dashboard-data.ts",
+    "intercom:dashboard-data:local": "tsx scripts/intercom/build-dashboard-data.ts -- --plaintext"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -27,8 +45,10 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
     "tailwindcss": "^4.2.4",
+    "tsx": "^4.21.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^4.0.18"
   }
 }

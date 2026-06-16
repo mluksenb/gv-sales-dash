@@ -11,6 +11,16 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+
+# Intercom conversation exports (local data, may contain sensitive content)
+data/intercom/conversations/*
+!data/intercom/conversations/.gitkeep
+data/intercom/manifest.jsonl
+
+# Never deploy/commit the plaintext dashboard payload — only the encrypted blob
+# (public/support-data.enc.json) is safe to ship.
+public/support-data.json
 
 # Editor directories and files
 .vscode/*

@@ -1,0 +1,32 @@
+{
+  "id": "215474663310403",
+  "created_at": 1781257594,
+  "updated_at": 1781257945,
+  "state": "closed",
+  "title": "rachat livret goodvest",
+  "source": {
+    "type": "email",
+    "delivered_as": "customer_initiated",
+    "subject": "<p>rachat livret goodvest</p>",
+    "body": "<div>Bonjour,<div>Quelle est la procédure si je veux récupérer la totalité ?</div></div>",
+    "author": { "type": "user", "name": "Toscane Marie", "email": "toscane@example.com" },
+    "attachments": []
+  },
+  "statistics": {
+    "first_contact_reply_at": 1781257595,
+    "first_admin_reply_at": 1781257944
+  },
+  "ai_agent_participated": false,
+  "custom_attributes": { "Language": "French" },
+  "conversation_parts": {
+    "conversation_parts": [
+      {
+        "part_type": "assignment",
+        "body": "<p class=\"no-margin\">Bonjour madame Marié,</p><p class=\"no-margin\">Merci pour votre message. Le délai de récupération des sommes est un délai interbancaire de 1 à 3 jours.</p>",
+        "created_at": 1781257944,
+        "author": { "type": "admin", "name": "Christelle Lefort", "email": "christelle@goodvest.fr" },
+        "attachments": []
+      }
+    ]
+  }
+}

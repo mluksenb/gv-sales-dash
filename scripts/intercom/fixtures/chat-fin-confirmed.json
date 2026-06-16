@@ -1,0 +1,48 @@
+{
+  "id": "215474662668139",
+  "created_at": 1781251068,
+  "updated_at": 1781251551,
+  "state": "closed",
+  "source": {
+    "type": "conversation",
+    "delivered_as": "customer_initiated",
+    "body": "<p>Quels sont les frais de sortie sur le fond iroko et Eiffel après un délai de 5 ans ?</p>",
+    "author": { "type": "user", "name": "Tony Carpentier", "email": "tony@example.com" },
+    "attachments": []
+  },
+  "statistics": {
+    "first_contact_reply_at": 1781251068,
+    "first_admin_reply_at": null
+  },
+  "custom_attributes": {
+    "Language": "French",
+    "AI Title": "Frais de sortie"
+  },
+  "ai_agent_participated": true,
+  "ai_agent": { "resolution_state": "confirmed_resolution" },
+  "conversation_parts": {
+    "conversation_parts": [
+      {
+        "part_type": "comment",
+        "body": "<p>Merci pour votre message, Tony Carpentier.</p><p>Pour <b>IROKO</b>, les frais de sortie sont de 0,00 %.</p>",
+        "created_at": 1781251086,
+        "author": { "type": "bot", "name": "Goodvest", "from_ai_agent": true },
+        "attachments": []
+      },
+      {
+        "part_type": "comment",
+        "body": "<p>oui</p>",
+        "created_at": 1781251120,
+        "author": { "type": "user", "name": "Tony Carpentier", "email": "tony@example.com" },
+        "attachments": []
+      },
+      {
+        "part_type": "note",
+        "body": "<p>Internal teammate note should not appear in transcript.</p>",
+        "created_at": 1781251125,
+        "author": { "type": "admin", "name": "Albane", "email": "albane@goodvest.fr" },
+        "attachments": []
+      }
+    ]
+  }
+}

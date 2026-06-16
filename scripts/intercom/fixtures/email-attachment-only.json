@@ -1,0 +1,26 @@
+{
+  "id": "215474663129995",
+  "created_at": 1781255767,
+  "updated_at": 1781255778,
+  "state": "closed",
+  "title": "Documents transmis",
+  "source": {
+    "type": "email",
+    "delivered_as": "customer_initiated",
+    "subject": "<p>Documents transmis</p>",
+    "body": null,
+    "author": { "type": "user", "name": "Marie Dupont", "email": "marie@example.com" },
+    "attachments": [
+      { "name": "Acte_de_décès.pdf" },
+      { "name": "Mandat.pdf" }
+    ]
+  },
+  "statistics": {
+    "first_contact_reply_at": 1781255767,
+    "first_admin_reply_at": null
+  },
+  "ai_agent_participated": false,
+  "conversation_parts": {
+    "conversation_parts": []
+  }
+}
