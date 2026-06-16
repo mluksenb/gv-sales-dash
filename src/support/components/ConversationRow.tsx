@@ -28,12 +28,10 @@ export function ConversationRow({ conversation: c, workspaceId }: Props) {
       </div>
 
       {c.title && (
-        <div className="mb-0.5 truncate text-sm font-semibold text-slate-800" title={title}>
-          {title}
-        </div>
+        <div className="mb-0.5 text-sm font-semibold text-slate-800">{title}</div>
       )}
 
-      <p className="line-clamp-3 text-[13px] leading-relaxed text-slate-600">
+      <p className="text-[13px] leading-relaxed text-slate-600">
         {c.summary ?? <span className="italic text-slate-400">Pas de résumé disponible.</span>}
       </p>
 

@@ -112,7 +112,7 @@ export function KpiRow({ kpis, channel }: { kpis: Kpis; channel: ChannelFilter }
         </div>
       </KpiCard>
 
-      <KpiCard label="Résolutions confirmées par le client">
+      <KpiCard label="Résolutions IA confirmées par le client">
         <div className="mt-2 flex items-center gap-2">
           <div className="text-3xl font-bold tracking-tight text-green-600">
             {pct(confirmedShare)}
