@@ -54,6 +54,13 @@ export function KpiRow({ kpis, channel }: { kpis: Kpis; channel: ChannelFilter }
   const emailShare = kpis.emailTotal / channelTotal
   const showChannelBreakdown = channel === 'all'
 
+  const escalatedHint =
+    channel === 'chat'
+      ? `${formatNumber(kpis.escalatedCount)} conversations transférées`
+      : channel === 'email'
+        ? `${formatNumber(kpis.escalatedCount)} conversations traitées par un humain`
+        : `${formatNumber(kpis.escalatedCount)} sans résolution autonome de Fin`
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <KpiCard label="Volume de conversations">
@@ -81,9 +88,7 @@ export function KpiRow({ kpis, channel }: { kpis: Kpis; channel: ChannelFilter }
           </div>
           <CornerUpRight className="h-5 w-5 text-amber-400" />
         </div>
-        <div className="mt-3 text-xs text-slate-500">
-          {formatNumber(kpis.escalatedCount)} conversations transférées
-        </div>
+        <div className="mt-3 text-xs text-slate-500">{escalatedHint}</div>
       </KpiCard>
 
       <KpiCard label="Résolution autonome de Fin" accent>

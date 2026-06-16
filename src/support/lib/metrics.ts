@@ -67,7 +67,7 @@ export interface Kpis {
   finResolvedCount: number
   /** Denominator for Fin resolution (chats when Fin applies; 0 on email-only). */
   finScopeTotal: number
-  finScopeLabel: 'chats' | 'emails'
+  finScopeLabel: 'chats' | 'emails' | 'conversations'
   escalatedCount: number
   escalatedRate: number
   confirmedCount: number
@@ -153,16 +153,39 @@ export function computeKpis(filtered: Conversation[], channel: ChannelFilter = '
     }
   }
 
+  const finResolvedCount = chatCounts.fin_confirmed + chatCounts.fin_assumed
+
+  // Chat-only: Fin metrics scoped to the chat channel.
+  if (channel === 'chat') {
+    return {
+      total: filtered.length,
+      chatTotal: chat.length,
+      emailTotal: 0,
+      finResolvedRate: resolvedRate(chatCounts),
+      finResolvedCount,
+      finScopeTotal: chat.length,
+      finScopeLabel: 'chats',
+      escalatedCount: chatCounts.fin_escalated,
+      escalatedRate: escalatedRate(chatCounts),
+      confirmedCount: chatCounts.fin_confirmed,
+      assumedCount: chatCounts.fin_assumed,
+    }
+  }
+
+  // All channels: overall rates (email counts as non–Fin-resolved).
+  const total = filtered.length
+  const withoutFinResolution = total - finResolvedCount
+
   return {
-    total: filtered.length,
+    total,
     chatTotal: chat.length,
     emailTotal: email.length,
-    finResolvedRate: resolvedRate(chatCounts),
-    finResolvedCount: chatCounts.fin_confirmed + chatCounts.fin_assumed,
-    finScopeTotal: chat.length,
-    finScopeLabel: 'chats',
-    escalatedCount: chatCounts.fin_escalated,
-    escalatedRate: escalatedRate(chatCounts),
+    finResolvedRate: total > 0 ? finResolvedCount / total : 0,
+    finResolvedCount,
+    finScopeTotal: total,
+    finScopeLabel: 'conversations',
+    escalatedCount: withoutFinResolution,
+    escalatedRate: total > 0 ? withoutFinResolution / total : 0,
     confirmedCount: chatCounts.fin_confirmed,
     assumedCount: chatCounts.fin_assumed,
   }
