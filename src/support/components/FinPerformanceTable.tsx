@@ -30,6 +30,8 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: 'escalated', label: "Taux d'escalade" },
 ]
 
+const ROW_GRID = 'grid-cols-[minmax(0,1fr)_3rem_180px_5.5rem]'
+
 export function FinPerformanceTable({ stats, selectedTopic, onSelect }: Props) {
   const [sort, setSort] = useState<SortKey>('priority')
 
@@ -67,11 +69,13 @@ export function FinPerformanceTable({ stats, selectedTopic, onSelect }: Props) {
       </div>
 
       {/* header */}
-      <div className="grid grid-cols-[1fr_auto_180px_auto] items-center gap-3 border-b border-slate-100 px-2 pb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+      <div
+        className={`grid ${ROW_GRID} items-center gap-3 border-b border-slate-100 px-2 pb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400`}
+      >
         <span>Sous-catégorie</span>
-        <span className="text-right">Vol.</span>
+        <span className="text-right tabular-nums">Vol.</span>
         <span>Répartition des issues</span>
-        <span className="text-right">Résolu · Escal.</span>
+        <span className="text-right tabular-nums">Résolu · Escal.</span>
       </div>
 
       <div className="max-h-[460px] divide-y divide-slate-50 overflow-y-auto scroll-soft">
@@ -81,7 +85,7 @@ export function FinPerformanceTable({ stats, selectedTopic, onSelect }: Props) {
             <button
               key={s.topic}
               onClick={() => onSelect(s.topic)}
-              className={`grid w-full grid-cols-[1fr_auto_180px_auto] items-center gap-3 px-2 py-2.5 text-left transition-colors ${
+              className={`grid w-full ${ROW_GRID} items-center gap-3 px-2 py-2.5 text-left transition-colors ${
                 isSelected ? 'bg-forest-50' : 'hover:bg-slate-50'
               }`}
             >
@@ -94,9 +98,11 @@ export function FinPerformanceTable({ stats, selectedTopic, onSelect }: Props) {
                 <span className="truncate text-sm font-medium text-slate-700">{s.topic}</span>
               </div>
 
-              <span className="text-right text-sm font-bold text-slate-800">{formatNumber(s.total)}</span>
+              <span className="text-right text-sm font-bold tabular-nums text-slate-800">
+                {formatNumber(s.total)}
+              </span>
 
-              <div className="w-[180px]">
+              <div className="w-full">
                 <StackedResolutionBar counts={s.counts} height={10} />
               </div>
 

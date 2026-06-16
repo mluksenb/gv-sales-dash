@@ -138,7 +138,11 @@ export function ConversationPanel({ selection, conversations, workspaceId, onClo
                 </div>
                 <div className="flex-1">
                   <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-slate-500">
-                    <span>Résolution autonome de Fin {chatCounts.total > 0 && `(${chatCounts.total} chats)`}</span>
+                    <span>
+                      Résolution autonome de Fin{' '}
+                      {chatCounts.total > 0 &&
+                        `(${chatCounts.fin_confirmed + chatCounts.fin_assumed}/${chatCounts.total} chats)`}
+                    </span>
                     <span className="font-bold text-slate-700">{pct(resolvedRate)}</span>
                   </div>
                   <StackedResolutionBar counts={chatCounts.total > 0 ? chatCounts : counts} height={10} />
