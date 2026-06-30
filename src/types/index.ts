@@ -201,3 +201,39 @@ export interface ClientProfile {
   projects: ClientProject[]
   deals: Deal[]
 }
+
+export type TimelineEventCategory =
+  | 'Notes'
+  | 'Intercom'
+  | 'Appels'
+  | 'Rendez-vous'
+  | 'Conformité'
+  | 'Blocages'
+  | 'Souscriptions'
+  | 'Relances'
+  | 'Tickets'
+  | 'Emails'
+  | 'Transactionnel'
+  | 'Marketing'
+
+export type TimelineEventIcon = 'relance' | 'intercom' | 'souscription'
+
+export interface TimelineIntercomDetail {
+  conversationId: string
+  subject: string
+  topics: string[]
+  issueSummary: string
+  intercomUrl?: string
+}
+
+export interface TimelineEvent {
+  id: string
+  title: string
+  category: TimelineEventCategory
+  icon: TimelineEventIcon
+  occurredAt: string
+  author?: string
+  description?: string
+  href?: string
+  intercom?: TimelineIntercomDetail
+}

@@ -30,6 +30,7 @@ import {
 } from '../lib/profileTabs'
 import { loadDeals, saveDeals } from '../lib/dealStorage'
 import { applyCloseDateChange, applyStageChange, getStageLabelClass, LOSS_REASON_OPTIONS } from '../lib/dealStage'
+import { ActivityTimelineTab } from './ActivityTimelineTab'
 
 const ALL_TABS = [
   { id: 'informations' as const, label: 'Informations' },
@@ -42,7 +43,7 @@ const ALL_TABS = [
   { id: 'segments' as const, label: 'Segments' },
 ] as const
 
-const ACTIVE_TABS = new Set<string>(['informations', 'opportunites', 'projets'])
+const ACTIVE_TABS = new Set<string>(['informations', 'opportunites', 'projets', 'timeline'])
 
 function withProfileTabInUrl(tab: ProfileTab): string {
   const params = new URLSearchParams(window.location.search)
@@ -2420,7 +2421,7 @@ export function ProfilePage({ setPage: _setPage }: ProfilePageProps) {
                 <ChevronRight size={10} className="text-gray-300" />
                 <span>{p.civilite} {p.prenom} {p.nom}</span>
                 <ChevronRight size={10} className="text-gray-300" />
-                <span className="text-gray-600">{{ informations: 'Informations', opportunites: 'Opportunités', projets: 'Projets' }[activeTab]}</span>
+                <span className="text-gray-600">{{ informations: 'Informations', opportunites: 'Opportunités', projets: 'Projets', timeline: 'Timeline' }[activeTab]}</span>
               </div>
             </div>
           </div>
@@ -2602,6 +2603,7 @@ export function ProfilePage({ setPage: _setPage }: ProfilePageProps) {
           {activeTab === 'informations' && <InformationsTab />}
           {activeTab === 'opportunites' && <DealsTab />}
           {activeTab === 'projets' && <ProjetsTab />}
+          {activeTab === 'timeline' && <ActivityTimelineTab />}
         </div>
       </div>
     </div>

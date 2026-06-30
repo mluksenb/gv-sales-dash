@@ -1,5 +1,5 @@
 import { addDays, addWeeks, startOfWeek } from 'date-fns'
-import type { Appointment, ClientProfile, DaySchedule, Task } from '../types'
+import type { Appointment, ClientProfile, DaySchedule, Task, TimelineEvent } from '../types'
 import { getParisToday, getEffectiveDurationMinutes } from '../utils/calendarMetrics'
 
 const WORKDAY_START = 9 * 60
@@ -887,3 +887,90 @@ export const clientProfile: ClientProfile = {
     },
   ],
 }
+
+export const timelineEvents: TimelineEvent[] = [
+  {
+    id: 'tl-1',
+    title: 'Relance clôturée auto (projet signé)',
+    category: 'Relances',
+    icon: 'relance',
+    occurredAt: '2026-05-23T16:13:00',
+    description: 'Tél récolté · Assurance-vie',
+  },
+  {
+    id: 'tl-2',
+    title: 'Message reçu',
+    category: 'Intercom',
+    icon: 'intercom',
+    occurredAt: '2026-05-21T12:37:00',
+    author: 'Leana M.',
+    intercom: {
+      conversationId: '215474526572668',
+      subject: 'Blocage finalisation souscription assurance-vie',
+      topics: ['Ouverture de compte / contrat', 'Signature impossible'],
+      issueSummary:
+        "La cliente signale qu'elle ne parvient pas à terminer sa souscription assurance-vie. Le lien reçu par e-mail ne fonctionne pas ; une pièce jointe est mentionnée. Intervention conseiller nécessaire pour débloquer le parcours de signature.",
+      intercomUrl:
+        'https://app.intercom.com/a/inbox/rbag1a9i/inbox/shared/all/conversation/215474526572668',
+    },
+  },
+  {
+    id: 'tl-3',
+    title: 'Souscription signée',
+    category: 'Souscriptions',
+    icon: 'souscription',
+    occurredAt: '2026-05-16T14:22:00',
+    description: 'Assurance-vie · Generali · 2000 € · 50 €/mois',
+  },
+  {
+    id: 'tl-4',
+    title: 'Appel entrant',
+    category: 'Appels',
+    icon: 'relance',
+    occurredAt: '2026-04-28T11:05:00',
+    description: 'Durée 12 min · Qualification projet',
+  },
+  {
+    id: 'tl-5',
+    title: 'Note conseiller',
+    category: 'Notes',
+    icon: 'intercom',
+    occurredAt: '2026-04-15T09:42:00',
+    author: 'Hildegarde Champey',
+    description: 'Client motivée, souhaite diversifier sur Generali avant fin Q2.',
+  },
+  {
+    id: 'tl-6',
+    title: 'Message reçu',
+    category: 'Intercom',
+    icon: 'intercom',
+    occurredAt: '2026-04-18T10:20:00',
+    author: 'Nina',
+    intercom: {
+      conversationId: '215474562142684',
+      subject: 'Justificatif de domicile refusé',
+      topics: ['Validation de documents / KYC'],
+      issueSummary:
+        'La cliente demande pourquoi son justificatif de domicile a été refusé et quels documents alternatifs sont acceptés pour débloquer la validation KYC.',
+      intercomUrl:
+        'https://app.intercom.com/a/inbox/rbag1a9i/inbox/shared/all/conversation/215474562142684',
+    },
+  },
+  {
+    id: 'tl-7',
+    title: 'Message reçu',
+    category: 'Intercom',
+    icon: 'intercom',
+    occurredAt: '2026-04-09T15:48:00',
+    author: 'Christelle L.',
+    intercom: {
+      conversationId: '215474611396033',
+      subject: 'Frais de gestion et arbitrage du portefeuille',
+      topics: ['Frais & tarification', 'Arbitrage / profil de risque'],
+      issueSummary:
+        "La cliente s'interroge sur le niveau des frais de gestion appliqués à son contrat et souhaite savoir s'il est possible d'arbitrer vers un profil plus prudent au vu des récentes évolutions de marché. Réponse de conseil patrimonial attendue.",
+      intercomUrl:
+        'https://app.intercom.com/a/inbox/rbag1a9i/inbox/shared/all/conversation/215474611396033',
+    },
+  },
+]
