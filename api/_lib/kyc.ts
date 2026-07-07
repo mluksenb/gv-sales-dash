@@ -44,6 +44,39 @@ export interface SuggestedFixEntry {
   value: string
 }
 
+/**
+ * Valeurs brutes extraites du document, remplies AVANT toute évaluation de
+ * critère (l'ordre du schéma structured-outputs force cette séquence).
+ * Chaîne vide quand la valeur est absente ou illisible.
+ */
+export interface ExtractedValues {
+  typeDocument: string
+  nom: string
+  prenoms: string
+  dateNaissance: string
+  nationalite: string
+  adresse: string
+  /** Date d'émission / de délivrance du document (AAAA-MM-JJ). */
+  dateEmission: string
+  /** Date d'expiration du document (AAAA-MM-JJ) — distincte de la date de délivrance. */
+  dateExpiration: string
+  iban: string
+  bic: string
+}
+
+export const EXTRACTED_FIELDS: (keyof ExtractedValues)[] = [
+  'typeDocument',
+  'nom',
+  'prenoms',
+  'dateNaissance',
+  'nationalite',
+  'adresse',
+  'dateEmission',
+  'dateExpiration',
+  'iban',
+  'bic',
+]
+
 export interface CriterionDefinition {
   id: string
   /** Libellé affiché dans l'UI (repris des écrans d'onboarding). */
@@ -55,6 +88,11 @@ export interface CriterionDefinition {
    * le modèle doit proposer un suggestedFix avec les valeurs lues sur le document.
    */
   fixFields?: FixableField[]
+  /**
+   * Critère daté : le verdict est recalculé de façon déterministe côté serveur
+   * à partir des valeurs extraites (le modèle lit les dates, le code les juge).
+   */
+  dateRule?: 'expiration' | 'recency3m'
 }
 
 export interface DocDefinition {
@@ -82,6 +120,8 @@ export interface CriterionResult {
   label: string
   status: CriterionStatus
   detail: string
+  /** Ce que le modèle a observé avant de conclure (audit / debug, non affiché). */
+  observation?: string
   /** En cas d'incohérence document / déclaration : valeurs lues sur le document. */
   suggestedFix?: SuggestedFixEntry[]
 }
@@ -91,14 +131,17 @@ export interface PrecheckResult {
   overall: CriterionStatus
   documentSummary: string
   criteria: CriterionResult[]
+  /** Valeurs brutes lues sur le document (audit / debug). */
+  extracted?: Partial<ExtractedValues>
 }
 
 const IDENTITY_COMMON: CriterionDefinition[] = [
   {
     id: 'validite',
     label: 'Document en cours de validité',
+    dateRule: 'expiration',
     instruction:
-      "Repère la date d'expiration sur le document et vérifie qu'elle est postérieure à la date du jour. Si la date d'expiration est illisible ou introuvable sur les images fournies, considère le critère en échec en l'expliquant.",
+      "Recopie la date d'expiration du document dans extracted.dateExpiration (attention : les pièces d'identité portent DEUX dates — la date de délivrance et la date d'expiration — ne les confonds jamais ; la date d'expiration est la plus tardive). Le calcul de validité est refait par le système à partir de cette valeur. Si la date d'expiration est illisible ou introuvable, laisse extracted.dateExpiration vide et mets le critère en échec.",
   },
   {
     id: 'qualite',
@@ -197,8 +240,9 @@ const DOC_DEFINITIONS: Record<DocTypeKey, DocDefinition> = {
       {
         id: 'date-recente',
         label: 'Daté de moins de 3 mois',
+        dateRule: 'recency3m',
         instruction:
-          "Repère la date d'émission du document et vérifie qu'elle date de moins de 3 mois par rapport à la date du jour. Si aucune date n'est lisible, le critère est en échec.",
+          "Recopie la date d'émission du document (date de la facture ou de la quittance) dans extracted.dateEmission. Le calcul « moins de 3 mois » est refait par le système à partir de cette valeur. Si aucune date d'émission n'est lisible, laisse extracted.dateEmission vide et mets le critère en échec.",
       },
       {
         id: 'nom-prenom',
@@ -286,10 +330,17 @@ Informations déclarées par le client lors de la souscription :
 - Nationalité : ${client.nationalite || '(non renseignée)'}
 - Adresse : ${[client.adresse, client.codePostal, client.ville, client.pays].filter(Boolean).join(', ') || '(non renseignée)'}
 
-Évalue chacun des critères suivants sur le document fourni :
+Procède en deux temps, dans cet ordre :
+
+ÉTAPE 1 — EXTRACTION (champ "extracted", à remplir en premier).
+Recopie VERBATIM les valeurs brutes lues sur le document, sans interprétation : type de document observé, nom, prénoms, date de naissance, nationalité, adresse, date d'émission/délivrance, date d'expiration, IBAN, BIC. Dates au format AAAA-MM-JJ. Chaîne vide pour toute valeur absente ou illisible — n'invente jamais.
+⚠️ Les pièces d'identité portent DEUX dates distinctes : la date de délivrance (extracted.dateEmission) et la date d'expiration (extracted.dateExpiration). Ne les confonds jamais.
+
+ÉTAPE 2 — ÉVALUATION. Évalue chacun des critères suivants sur la base des valeurs extraites et de ton observation visuelle du document :
 ${criteriaBlock}
 
 Règles :
+- Pour chaque critère, remplis d'abord "observation" (ce que tu constates factuellement, en citant les valeurs extraites pertinentes), PUIS conclus avec "status" : la conclusion doit découler logiquement de l'observation.
 - Pour chaque critère, rends un statut "pass" ou "fail".
 - En cas de doute sérieux ou d'information illisible/introuvable, choisis "fail" et explique pourquoi : mieux vaut demander une correction maintenant qu'un rejet plus tard.
 - Le champ "detail" doit être une phrase courte en français, orientée client : si le critère échoue, explique précisément le problème et ce que le client doit corriger (re-upload d'un document conforme, ou correction de l'information déclarée si c'est elle qui est erronée).
@@ -300,25 +351,71 @@ Règles :
 
 /** Forme du JSON attendu du modèle (garanti par le schéma structured-outputs côté serveur). */
 export interface RawModelOutput {
+  extracted?: Partial<Record<keyof ExtractedValues, string>>
   documentSummary?: string
   criteria?: Array<{
     id?: string
+    observation?: string
     status?: string
     detail?: string
     suggestedFix?: Array<{ field?: string; value?: string }>
   }>
 }
 
+function parseIsoDate(value: string | undefined): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const date = new Date(`${value}T00:00:00`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function formatFr(date: Date): string {
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+/**
+ * Verdict déterministe des critères datés : le modèle lit les dates
+ * (extraction), le code les compare à la date du jour — jamais l'inverse.
+ */
+function applyDateRule(
+  rule: NonNullable<CriterionDefinition['dateRule']>,
+  extracted: Partial<Record<keyof ExtractedValues, string>>,
+): { status: CriterionStatus; detail: string } {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  if (rule === 'expiration') {
+    const expiration = parseIsoDate(extracted.dateExpiration)
+    if (!expiration) {
+      return { status: 'fail', detail: "La date d'expiration n'a pas pu être lue sur le document." }
+    }
+    return expiration >= today
+      ? { status: 'pass', detail: `Document valide jusqu'au ${formatFr(expiration)}.` }
+      : { status: 'fail', detail: `Le document a expiré le ${formatFr(expiration)}. Veuillez fournir un document en cours de validité.` }
+  }
+
+  // recency3m
+  const emission = parseIsoDate(extracted.dateEmission)
+  if (!emission) {
+    return { status: 'fail', detail: "La date d'émission n'a pas pu être lue sur le document." }
+  }
+  const threshold = new Date(today)
+  threshold.setMonth(threshold.getMonth() - 3)
+  return emission >= threshold
+    ? { status: 'pass', detail: `Document daté du ${formatFr(emission)} (moins de 3 mois).` }
+    : { status: 'fail', detail: `Le document est daté du ${formatFr(emission)}, soit plus de 3 mois. Veuillez fournir un justificatif plus récent.` }
+}
+
 /** Rabat la sortie du modèle sur la liste de critères de référence du document. */
 export function toPrecheckResult(def: DocDefinition, parsed: RawModelOutput): PrecheckResult {
+  const extracted = parsed.extracted ?? {}
   const byId = new Map((parsed.criteria ?? []).map((c) => [c.id, c]))
   const criteria: CriterionResult[] = def.criteria.map((c) => {
     const found = byId.get(c.id)
-    if (!found) {
+    if (!found && !c.dateRule) {
       return { id: c.id, label: c.label, status: 'fail', detail: "Ce critère n'a pas pu être évalué." }
     }
     const allowedFields = c.fixFields ?? []
-    const suggestedFix = (found.suggestedFix ?? [])
+    const suggestedFix = (found?.suggestedFix ?? [])
       .filter(
         (f): f is SuggestedFixEntry =>
           typeof f.field === 'string' &&
@@ -326,13 +423,20 @@ export function toPrecheckResult(def: DocDefinition, parsed: RawModelOutput): Pr
           f.value.trim() !== '' &&
           allowedFields.includes(f.field as FixableField),
       )
-    return {
+    const base: CriterionResult = {
       id: c.id,
       label: c.label,
-      status: found.status === 'pass' ? 'pass' : 'fail',
-      detail: found.detail ?? '',
+      status: found?.status === 'pass' ? 'pass' : 'fail',
+      detail: found?.detail ?? '',
+      ...(found?.observation ? { observation: found.observation } : {}),
       ...(suggestedFix.length > 0 ? { suggestedFix } : {}),
     }
+    // Les critères datés sont tranchés par le code, pas par le modèle.
+    if (c.dateRule) {
+      const verdict = applyDateRule(c.dateRule, extracted)
+      return { ...base, status: verdict.status, detail: verdict.detail }
+    }
+    return base
   })
 
   return {
@@ -340,5 +444,6 @@ export function toPrecheckResult(def: DocDefinition, parsed: RawModelOutput): Pr
     overall: criteria.every((c) => c.status === 'pass') ? 'pass' : 'fail',
     documentSummary: parsed.documentSummary ?? '',
     criteria,
+    extracted,
   }
 }

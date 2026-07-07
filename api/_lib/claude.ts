@@ -20,21 +20,55 @@ import {
  */
 const DEFAULT_MODEL = 'claude-haiku-4-5'
 
-/** Schéma imposé à la réponse (structured outputs) — le JSON est garanti valide. */
+/**
+ * Schéma imposé à la réponse (structured outputs) — le JSON est garanti valide.
+ * L'ORDRE des propriétés est délibéré : le décodage contraint suit l'ordre du
+ * schéma, donc le modèle extrait d'abord les valeurs brutes (extracted), puis,
+ * pour chaque critère, écrit son observation AVANT de conclure (status).
+ */
 const RESPONSE_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['documentSummary', 'criteria'],
+  required: ['extracted', 'documentSummary', 'criteria'],
   properties: {
+    extracted: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'typeDocument',
+        'nom',
+        'prenoms',
+        'dateNaissance',
+        'nationalite',
+        'adresse',
+        'dateEmission',
+        'dateExpiration',
+        'iban',
+        'bic',
+      ],
+      properties: {
+        typeDocument: { type: 'string' },
+        nom: { type: 'string' },
+        prenoms: { type: 'string' },
+        dateNaissance: { type: 'string' },
+        nationalite: { type: 'string' },
+        adresse: { type: 'string' },
+        dateEmission: { type: 'string' },
+        dateExpiration: { type: 'string' },
+        iban: { type: 'string' },
+        bic: { type: 'string' },
+      },
+    },
     documentSummary: { type: 'string' },
     criteria: {
       type: 'array',
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['id', 'status', 'detail', 'suggestedFix'],
+        required: ['id', 'observation', 'status', 'detail', 'suggestedFix'],
         properties: {
           id: { type: 'string' },
+          observation: { type: 'string' },
           status: { type: 'string', enum: ['pass', 'fail'] },
           detail: { type: 'string' },
           suggestedFix: {
@@ -102,11 +136,16 @@ export async function runPrecheck(
     { type: 'text', text: buildPrompt(def, payload.client, payload.files.length) },
   ]
 
+  // Température 0 pour des verdicts reproductibles ; le paramètre n'existe plus
+  // sur Opus 4.7+ — on ne l'envoie que pour les familles qui l'acceptent.
+  const supportsTemperature = /haiku|sonnet/.test(model)
+
   let response: Anthropic.Message
   try {
     response = await client.messages.create({
       model,
       max_tokens: 4096,
+      ...(supportsTemperature ? { temperature: 0 } : {}),
       output_config: { format: { type: 'json_schema', schema: RESPONSE_SCHEMA } },
       messages: [{ role: 'user', content }],
     })
