@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/docs-ai",
+      "destination": "/docs-ai.html"
+    },
+    {
+      "source": "/support",
+      "destination": "/support.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

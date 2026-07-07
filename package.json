@@ -26,6 +26,7 @@
     "intercom:dashboard-data:local": "tsx scripts/intercom/build-dashboard-data.ts -- --plaintext"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "date-fns": "^4.1.0",
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
