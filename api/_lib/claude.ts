@@ -11,7 +11,7 @@ import {
   type PrecheckRequest,
   type PrecheckResult,
   type RawModelOutput,
-} from './kyc'
+} from './kyc.js'
 
 /**
  * Pré-contrôle "léger" : Haiku 4.5 est le modèle le plus rapide et le plus

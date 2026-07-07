@@ -1,5 +1,6 @@
-import { runPrecheck } from './_lib/claude'
-import type { PrecheckRequest } from './_lib/kyc'
+// Extensions .js explicites : requises par le runtime ESM des fonctions Vercel.
+import { runPrecheck } from './_lib/claude.js'
+import type { PrecheckRequest } from './_lib/kyc.js'
 
 export async function POST(request: Request): Promise<Response> {
   const apiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY
