@@ -321,7 +321,7 @@ function CriteriaList({
                     <div>
                       <p className="font-medium text-red-700">{criterion.label}</p>
                       {criterion.detail && (
-                        <p className="mt-0.5 text-xs text-red-600/90">{criterion.detail}</p>
+                        <p className="mt-0.5 text-xs text-slate-600">{criterion.detail}</p>
                       )}
                     </div>
                   </div>
@@ -329,7 +329,7 @@ function CriteriaList({
                     <button
                       type="button"
                       onClick={onChangeDocument}
-                      className="flex items-center gap-1.5 rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50"
+                      className="flex items-center gap-1.5 rounded-full bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
                     >
                       <UploadCloud className="size-3.5" /> Changer de document
                     </button>
