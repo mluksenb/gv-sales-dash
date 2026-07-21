@@ -1,4 +1,4 @@
-import { LayoutDashboard, Target, Briefcase, ShieldCheck } from 'lucide-react'
+import { LayoutDashboard, Target, Briefcase, ShieldCheck, SquareKanban, Headset } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Page, SetPageFn } from '../App'
 import type { ProfileTab } from '../lib/profileTabs'
@@ -28,6 +28,16 @@ const NAV_ITEMS: {
     label: 'Opportunités (Fiche Client)',
     icon: Briefcase,
     profileTab: 'opportunites',
+  },
+  {
+    page: 'tickets',
+    label: 'Tickets (Goodoffice)',
+    icon: SquareKanban,
+  },
+  {
+    page: 'client-contact',
+    label: 'Espace client - options de contact',
+    icon: Headset,
   },
 ]
 

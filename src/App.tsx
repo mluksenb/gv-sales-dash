@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
+import { ClientContactPage } from './components/ClientContactPage'
 import { Dashboard } from './components/Dashboard'
 import { HomePage } from './components/HomePage'
 import { ObjectivesPage } from './components/ObjectivesPage'
 import { ProfilePage } from './components/ProfilePage'
+import { TicketsPage } from './components/TicketsPage'
 import { profileUrl, type ProfileTab } from './lib/profileTabs'
 
-export type Page = 'home' | 'dashboard' | 'objectifs' | 'profile'
+export type Page = 'home' | 'dashboard' | 'objectifs' | 'profile' | 'tickets' | 'client-contact'
 
 export type NavigateOptions = { profileTab?: ProfileTab }
 
@@ -16,6 +18,8 @@ const PAGE_PATHS: Record<Page, string> = {
   dashboard: '/dashboard',
   objectifs: '/objectifs',
   profile: '/profile',
+  tickets: '/tickets',
+  'client-contact': '/espace-client-contact',
 }
 
 function pageUrl(page: Page, options?: NavigateOptions): string {
@@ -30,6 +34,8 @@ function resolvePageFromPath(pathname: string): Page {
   if (normalizedPath === PAGE_PATHS.dashboard) return 'dashboard'
   if (normalizedPath === PAGE_PATHS.objectifs) return 'objectifs'
   if (normalizedPath === PAGE_PATHS.profile) return 'profile'
+  if (normalizedPath === PAGE_PATHS.tickets) return 'tickets'
+  if (normalizedPath === PAGE_PATHS['client-contact']) return 'client-contact'
   return 'home'
 }
 
@@ -58,6 +64,8 @@ function App() {
   if (page === 'home') return <HomePage setPage={navigateToPage} />
   if (page === 'objectifs') return <ObjectivesPage setPage={navigateToPage} />
   if (page === 'profile') return <ProfilePage setPage={navigateToPage} />
+  if (page === 'tickets') return <TicketsPage setPage={navigateToPage} />
+  if (page === 'client-contact') return <ClientContactPage setPage={navigateToPage} />
   return <Dashboard setPage={navigateToPage} />
 }
 
